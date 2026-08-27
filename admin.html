@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Admin Dashboard - OES</title>
+
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- Header -->
+
+    <header class="header">
+
+        <div class="container navbar">
+
+            <a
+                href="admin.html"
+                class="logo"
+            >
+                OES
+            </a>
+
+
+            <nav class="nav-links">
+
+                <a href="admin.html">
+                    Dashboard
+                </a>
+
+
+                <a href="index.html">
+                    Home
+                </a>
+
+
+                <a
+                    href="#"
+                    id="logoutBtn"
+                    class="nav-register"
+                >
+                    Logout
+                </a>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- Admin Dashboard -->
+
+    <main>
+
+        <section class="dashboard-section">
+
+            <div class="container">
+
+
+                <!-- Welcome -->
+
+                <div class="dashboard-welcome">
+
+                    <div>
+
+                        <span class="dashboard-label">
+                            ADMIN DASHBOARD
+                        </span>
+
+
+                        <h1>
+                            Welcome, Admin 👋
+                        </h1>
+
+
+                        <p>
+                            Manage students, examinations,
+                            questions and results.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- Statistics -->
+
+                <div class="stats-grid">
+
+
+                    <!-- Students -->
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon">
+                            👨‍🎓
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Total Students
+                            </span>
+
+
+                            <strong id="totalStudents">
+                                1
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- Exams -->
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon">
+                            📝
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Total Exams
+                            </span>
+
+
+                            <strong id="adminTotalExams">
+                                1
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- Questions -->
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon">
+                            ❓
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Total Questions
+                            </span>
+
+
+                            <strong id="totalQuestions">
+                                5
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- Results -->
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon">
+                            📊
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Total Results
+                            </span>
+
+
+                            <strong id="totalResults">
+                                0
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- Management -->
+
+                <div class="dashboard-heading">
+
+                    <div>
+
+                        <span>
+                            MANAGEMENT
+                        </span>
+
+
+                        <h2>
+                            Examination Management
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="exam-grid">
+
+
+                    <!-- Students -->
+
+                    <div class="exam-card">
+
+                        <div class="exam-card-top">
+
+                            <div class="exam-small-icon">
+                                👨‍🎓
+                            </div>
+
+                            <span class="exam-status">
+                                STUDENTS
+                            </span>
+
+                        </div>
+
+
+                        <h3>
+                            Students
+                        </h3>
+
+
+                        <p class="exam-category">
+                            Manage registered students.
+                        </p>
+
+
+                        <a
+                            href="students.html"
+                            class="btn btn-primary"
+                        >
+                            Manage Students
+                        </a>
+
+                    </div>
+
+
+
+                    <!-- Exams -->
+
+                    <div class="exam-card">
+
+                        <div class="exam-card-top">
+
+                            <div class="exam-small-icon">
+                                📝
+                            </div>
+
+                            <span class="exam-status">
+                                EXAMS
+                            </span>
+
+                        </div>
+
+
+                        <h3>
+                            Examinations
+                        </h3>
+
+
+                        <p class="exam-category">
+                            Create and manage examinations.
+                        </p>
+
+
+                        <a
+                            href="exams.html"
+                            class="btn btn-primary"
+                        >
+                            Manage Exams
+                        </a>
+
+                    </div>
+
+
+
+                    <!-- Questions -->
+
+                    <div class="exam-card">
+
+                        <div class="exam-card-top">
+
+                            <div class="exam-small-icon">
+                                ❓
+                            </div>
+
+                            <span class="exam-status">
+                                QUESTIONS
+                            </span>
+
+                        </div>
+
+
+                        <h3>
+                            Questions
+                        </h3>
+
+
+                        <p class="exam-category">
+                            Manage examination questions.
+                        </p>
+
+
+                        <a
+                            href="questions.html"
+                            class="btn btn-primary"
+                        >
+                            Manage Questions
+                        </a>
+
+                    </div>
+
+
+
+                    <!-- Results -->
+
+                    <div class="exam-card">
+
+                        <div class="exam-card-top">
+
+                            <div class="exam-small-icon">
+                                📊
+                            </div>
+
+                            <span class="exam-status">
+                                RESULTS
+                            </span>
+
+                        </div>
+
+
+                        <h3>
+                            Results
+                        </h3>
+
+
+                        <p class="exam-category">
+                            View student examination results.
+                        </p>
+
+
+                        <a
+                            href="results.html"
+                            class="btn btn-primary"
+                        >
+                            View Results
+                        </a>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- Recent Activity -->
+
+                <div class="dashboard-heading results-heading">
+
+                    <div>
+
+                        <span>
+                            ACTIVITY
+                        </span>
+
+
+                        <h2>
+                            Recent Activity
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="empty-results">
+
+                    <div class="empty-icon">
+                        📋
+                    </div>
+
+
+                    <h3>
+                        No Recent Activity
+                    </h3>
+
+
+                    <p>
+                        Student registrations and examination
+                        activity will appear here.
+                    </p>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- Footer -->
+
+    <footer class="footer">
+
+        <div class="container">
+
+            <p>
+                © 2026 OES - Online Aptitude Examination System
+            </p>
+
+        </div>
+
+    </footer>
+
+
+
+    <!-- JavaScript -->
+
+    <script src="js/auth.js"></script>
+
+    <script src="js/admin.js"></script>
+
+
+</body>
+
+</html>

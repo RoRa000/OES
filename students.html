@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Students - OES</title>
+
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- Header -->
+
+    <header class="header">
+
+        <div class="container navbar">
+
+
+            <a
+                href="admin.html"
+                class="logo"
+            >
+                OES
+            </a>
+
+
+            <nav class="nav-links">
+
+                <a href="admin.html">
+                    Dashboard
+                </a>
+
+
+                <a href="index.html">
+                    Home
+                </a>
+
+
+                <a
+                    href="#"
+                    id="logoutBtn"
+                    class="nav-register"
+                >
+                    Logout
+                </a>
+
+            </nav>
+
+
+        </div>
+
+    </header>
+
+
+
+    <!-- Students Section -->
+
+    <main>
+
+        <section class="dashboard-section">
+
+            <div class="container">
+
+
+                <!-- Page Header -->
+
+                <div class="dashboard-welcome">
+
+                    <div>
+
+                        <span class="dashboard-label">
+                            STUDENT MANAGEMENT
+                        </span>
+
+
+                        <h1>
+                            Registered Students 👨‍🎓
+                        </h1>
+
+
+                        <p>
+                            View students who have registered
+                            for the Online Examination System.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- Student Count -->
+
+                <div class="stats-grid">
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon">
+                            👨‍🎓
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Total Students
+                            </span>
+
+
+                            <strong id="studentCount">
+                                0
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- Students List -->
+
+                <div class="dashboard-heading">
+
+                    <div>
+
+                        <span>
+                            STUDENTS
+                        </span>
+
+
+                        <h2>
+                            Registered Student List
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+
+                <div
+                    id="studentsContainer"
+                    class="exam-grid"
+                >
+
+                    <!-- Students will appear here -->
+
+                </div>
+
+
+
+                <!-- No Students -->
+
+                <div
+                    id="noStudents"
+                    class="empty-results"
+                    style="display: none;"
+                >
+
+                    <div class="empty-icon">
+                        👨‍🎓
+                    </div>
+
+
+                    <h3>
+                        No Students Registered
+                    </h3>
+
+
+                    <p>
+                        Registered students will appear
+                        here.
+                    </p>
+
+                </div>
+
+
+
+                <!-- Back Button -->
+
+                <div
+                    style="
+                        margin-top: 30px;
+                        text-align: center;
+                    "
+                >
+
+                    <a
+                        href="admin.html"
+                        class="btn btn-primary"
+                    >
+                        ← Back to Admin Dashboard
+                    </a>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- Footer -->
+
+    <footer class="footer">
+
+        <div class="container">
+
+            <p>
+                © 2026 OES - Online Aptitude Examination System
+            </p>
+
+        </div>
+
+    </footer>
+
+
+
+    <!-- JavaScript -->
+
+    <script src="js/auth.js"></script>
+
+    <script src="js/admin.js"></script>
+
+    <script src="js/students.js"></script>
+
+
+</body>
+
+</html>

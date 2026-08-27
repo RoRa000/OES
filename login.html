@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Login - OES</title>
+
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- HEADER -->
+
+    <header class="header">
+
+        <div class="container navbar">
+
+            <a
+                href="index.html"
+                class="logo"
+            >
+                OES
+            </a>
+
+
+            <nav class="nav-links">
+
+                <a href="index.html">
+                    Home
+                </a>
+
+                <a href="index.html#about">
+                    About
+                </a>
+
+                <a href="register.html">
+                    Register
+                </a>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- LOGIN SECTION -->
+
+    <main>
+
+        <section class="auth-section">
+
+            <div class="auth-card">
+
+
+                <!-- LOGIN HEADER -->
+
+                <div class="auth-header">
+
+                    <div class="auth-icon">
+                        🔐
+                    </div>
+
+
+                    <h1>
+                        Welcome Back
+                    </h1>
+
+
+                    <p>
+                        Login to your OES account to continue.
+                    </p>
+
+                </div>
+
+
+
+                <!-- LOGIN FORM -->
+
+                <form id="loginForm">
+
+
+                    <!-- EMAIL -->
+
+                    <div class="form-group">
+
+                        <label for="loginEmail">
+                            Email Address
+                        </label>
+
+
+                        <input
+                            type="email"
+                            id="loginEmail"
+                            placeholder="Enter your email"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- PASSWORD -->
+
+                    <div class="form-group">
+
+                        <label for="loginPassword">
+                            Password
+                        </label>
+
+
+                        <input
+                            type="password"
+                            id="loginPassword"
+                            placeholder="Enter your password"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- MESSAGE -->
+
+                    <div
+                        id="loginMessage"
+                        class="form-message"
+                    ></div>
+
+
+
+                    <!-- LOGIN BUTTON -->
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary auth-button"
+                    >
+                        Login
+                    </button>
+
+
+                </form>
+
+
+
+                <!-- STUDENT REGISTRATION -->
+
+                <div class="auth-footer">
+
+                    <p>
+
+                        Don't have a student account?
+
+                        <a href="register.html">
+                            Create Student Account
+                        </a>
+
+                    </p>
+
+
+                    <a
+                        href="admin-login.html"
+                        class="back-home"
+                    >
+                        👨‍💼 Admin Login
+                    </a>
+
+
+                    <br><br>
+
+
+                    <a
+                        href="index.html"
+                        class="back-home"
+                    >
+                        ← Back to Home
+                    </a>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- FOOTER -->
+
+    <footer class="footer">
+
+        <div class="container">
+
+            <p>
+                © 2026 OES - Online Aptitude Examination System
+            </p>
+
+        </div>
+
+    </footer>
+
+
+
+    <!-- JAVASCRIPT -->
+
+    <script src="js/auth.js"></script>
+
+    <script src="js/login.js"></script>
+
+
+</body>
+
+</html>

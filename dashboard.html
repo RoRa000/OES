@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Student Dashboard - OES</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container navbar">
+
+            <a href="dashboard.html" class="logo">
+                OES
+            </a>
+
+            <nav class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+
+                <a href="index.html">Home</a>
+
+                <a href="#" id="logoutBtn" class="nav-register">
+                    Logout
+                </a>
+            </nav>
+
+        </div>
+    </header>
+
+
+    <!-- Dashboard -->
+    <main>
+
+        <section class="dashboard-section">
+
+            <div class="container">
+
+                <!-- Welcome -->
+                <div class="dashboard-welcome">
+
+                    <div>
+
+                        <span class="dashboard-label">
+                            STUDENT DASHBOARD
+                        </span>
+
+                        <h1>
+                            Welcome to <span id="studentName">OES</span> 👋
+                        </h1>
+
+                        <p>
+                            Manage your examinations and track your performance.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Statistics -->
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon">
+                            📝
+                        </div>
+
+                        <div>
+                            <span>
+                                Total Exams
+                            </span>
+
+                            <strong id="totalExams">
+                                1
+                            </strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon">
+                            ✓
+                        </div>
+
+                        <div>
+                            <span>
+                                Completed Exams
+                            </span>
+
+                            <strong id="completedExams">
+                                0
+                            </strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon">
+                            ⏳
+                        </div>
+
+                        <div>
+                            <span>
+                                Pending Exams
+                            </span>
+
+                            <strong id="pendingExams">
+                                1
+                            </strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon">
+                            📊
+                        </div>
+
+                        <div>
+                            <span>
+                                Average Score
+                            </span>
+
+                            <strong id="averageScore">
+                                0%
+                            </strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Available Exams -->
+                <div class="dashboard-heading">
+
+                    <div>
+
+                        <span>
+                            EXAMINATIONS
+                        </span>
+
+                        <h2>
+                            Available Examinations
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <div class="exam-grid">
+
+                    <!-- General Aptitude Test -->
+                    <div class="exam-card">
+
+                        <div class="exam-card-top">
+
+                            <div class="exam-small-icon">
+                                📝
+                            </div>
+
+                            <span class="exam-status">
+                                ACTIVE
+                            </span>
+
+                        </div>
+
+
+                        <h3>
+                            General Aptitude Test
+                        </h3>
+
+                        <p class="exam-category">
+                            General Aptitude
+                        </p>
+
+
+                        <div class="exam-details">
+
+                            <div>
+                                <span>
+                                    Questions
+                                </span>
+
+                                <strong>
+                                    5
+                                </strong>
+                            </div>
+
+
+                            <div>
+                                <span>
+                                    Duration
+                                </span>
+
+                                <strong>
+                                    10 Min
+                                </strong>
+                            </div>
+
+
+                            <div>
+                                <span>
+                                    Negative
+                                </span>
+
+                                <strong>
+                                    0.25
+                                </strong>
+                            </div>
+
+                        </div>
+
+
+                        <a
+                            href="exam.html"
+                            class="btn btn-primary exam-start-btn"
+                            id="startExamBtn"
+                        >
+                            Start Exam
+                        </a>
+
+                    </div>
+
+                </div>
+
+
+                <!-- My Results -->
+                <div class="dashboard-heading results-heading">
+
+                    <div>
+
+                        <span>
+                            PERFORMANCE
+                        </span>
+
+                        <h2>
+                            My Results
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Empty Results -->
+                <div
+                    class="empty-results"
+                    id="emptyResults"
+                >
+
+                    <div class="empty-icon">
+                        📊
+                    </div>
+
+                    <h3>
+                        No Results Yet
+                    </h3>
+
+                    <p>
+                        Complete an examination to see your results here.
+                    </p>
+
+                </div>
+
+
+                <!-- Result Card -->
+                <div
+                    class="exam-result-card"
+                    id="resultCard"
+                    style="display: none;"
+                >
+
+                    <div>
+
+                        <span class="dashboard-label">
+                            GENERAL APTITUDE TEST
+                        </span>
+
+                        <h3>
+                            Examination Completed
+                        </h3>
+
+                        <p>
+                            Your latest examination result.
+                        </p>
+
+                    </div>
+
+
+                    <div class="dashboard-result-details">
+
+                        <div>
+                            <span>
+                                Score
+                            </span>
+
+                            <strong id="dashboardMarks">
+                                0
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                Percentage
+                            </span>
+
+                            <strong id="dashboardPercentage">
+                                0%
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                Correct
+                            </span>
+
+                            <strong id="dashboardCorrect">
+                                0
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                Wrong
+                            </span>
+
+                            <strong id="dashboardWrong">
+                                0
+                            </strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="dashboard-result-action">
+
+                        <a
+                            href="result.html"
+                            class="btn btn-primary"
+                        >
+                            View Result
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- Footer -->
+    <footer class="footer">
+
+        <div class="container">
+
+            <p>
+                © 2026 OES - Online Aptitude Examination System
+            </p>
+
+        </div>
+
+    </footer>
+
+
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+
+</body>
+</html>

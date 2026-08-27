@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Student Results - OES</title>
+
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- Header -->
+
+    <header class="header">
+
+        <div class="container navbar">
+
+            <a
+                href="admin.html"
+                class="logo"
+            >
+                OES
+            </a>
+
+
+            <nav class="nav-links">
+
+                <a href="admin.html">
+                    Dashboard
+                </a>
+
+
+                <a href="index.html">
+                    Home
+                </a>
+
+
+                <a
+                    href="#"
+                    id="logoutBtn"
+                    class="nav-register"
+                >
+                    Logout
+                </a>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- Results Section -->
+
+    <main>
+
+        <section class="dashboard-section">
+
+            <div class="container">
+
+
+                <!-- Page Header -->
+
+                <div class="dashboard-welcome">
+
+                    <div>
+
+                        <span class="dashboard-label">
+                            RESULT MANAGEMENT
+                        </span>
+
+
+                        <h1>
+                            Student Results 📊
+                        </h1>
+
+
+                        <p>
+                            View examination results
+                            submitted by students.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- Result Count -->
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon">
+                            📊
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Total Results
+                            </span>
+
+
+                            <strong id="resultCount">
+                                0
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- Results Heading -->
+
+                <div class="dashboard-heading">
+
+                    <div>
+
+                        <span>
+                            RESULTS
+                        </span>
+
+
+                        <h2>
+                            Examination Results
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- Results Container -->
+
+                <div
+                    id="resultsContainer"
+                    class="exam-grid"
+                >
+
+                </div>
+
+
+
+                <!-- No Results -->
+
+                <div
+                    id="noResults"
+                    class="empty-results"
+                    style="display: none;"
+                >
+
+                    <div class="empty-icon">
+                        📊
+                    </div>
+
+
+                    <h3>
+                        No Results Available
+                    </h3>
+
+
+                    <p>
+                        Student examination results
+                        will appear here after an exam
+                        is completed.
+                    </p>
+
+                </div>
+
+
+
+                <!-- Back Button -->
+
+                <div
+                    style="
+                        margin-top: 30px;
+                        text-align: center;
+                    "
+                >
+
+                    <a
+                        href="admin.html"
+                        class="btn btn-primary"
+                    >
+                        ← Back to Admin Dashboard
+                    </a>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- Footer -->
+
+    <footer class="footer">
+
+        <div class="container">
+
+            <p>
+                © 2026 OES - Online Aptitude Examination System
+            </p>
+
+        </div>
+
+    </footer>
+
+
+
+    <!-- JavaScript -->
+
+    <script src="js/auth.js"></script>
+
+    <script src="js/results.js"></script>
+
+
+</body>
+
+</html>
