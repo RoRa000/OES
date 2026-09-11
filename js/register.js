@@ -1,24 +1,27 @@
 /* ========================================
    OES - Student Registration
+   Backend Connected
 ======================================== */
+
+const API_URL = "http://localhost:3000/api";
 
 const registerForm = document.getElementById("registerForm");
 
 if (registerForm) {
 
-    registerForm.addEventListener("submit", function (event) {
+    registerForm.addEventListener("submit", async function (event) {
 
         event.preventDefault();
 
-        /* ========================================
-           Get Form Values
-        ======================================== */
+        // ========================================
+        // GET FORM VALUES
+        // ========================================
 
         const fullName =
             document.getElementById("fullName").value.trim();
 
         const email =
-            document.getElementById("registerEmail").value.trim();
+            document.getElementById("registerEmail").value.trim().toLowerCase();
 
         const mobile =
             document.getElementById("mobile").value.trim();
@@ -29,179 +32,142 @@ if (registerForm) {
         const confirmPassword =
             document.getElementById("confirmPassword").value;
 
-        const message =
-            document.getElementById("registerMessage");
+        // ========================================
+        // VALIDATION
+        // ========================================
 
-
-        /* ========================================
-           Validation
-        ======================================== */
-
-        if (!fullName || !email || !mobile || !password || !confirmPassword) {
-
+        if (
+            !fullName ||
+            !email ||
+            !mobile ||
+            !password ||
+            !confirmPassword
+        ) {
             showRegisterMessage(
                 "Please fill all required fields.",
                 false
             );
-
             return;
         }
 
-
-        /* ========================================
-           Mobile Validation
-        ======================================== */
-
         if (!/^[0-9]{10}$/.test(mobile)) {
-
             showRegisterMessage(
                 "Please enter a valid 10-digit mobile number.",
                 false
             );
-
             return;
         }
 
-
-        /* ========================================
-           Password Validation
-        ======================================== */
-
         if (password.length < 6) {
-
             showRegisterMessage(
                 "Password must contain at least 6 characters.",
                 false
             );
-
             return;
         }
 
-
-        /* ========================================
-           Confirm Password
-        ======================================== */
-
         if (password !== confirmPassword) {
-
             showRegisterMessage(
                 "Passwords do not match.",
                 false
             );
-
             return;
         }
 
+        // ========================================
+        // DISABLE BUTTON
+        // ========================================
 
-        /* ========================================
-           Get Existing Students
-        ======================================== */
+        const submitButton =
+            registerForm.querySelector('button[type="submit"]');
 
-        let students = JSON.parse(
-            localStorage.getItem("oesStudents") || "[]"
-        );
-
-
-        if (!Array.isArray(students)) {
-            students = [];
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = "Registering...";
         }
 
+        try {
 
-        /* ========================================
-           Check Duplicate Email
-        ======================================== */
+            // ========================================
+            // SEND DATA TO BACKEND
+            // ========================================
 
-        const existingStudent = students.find(function (student) {
+            const response = await fetch(
+                `${API_URL}/auth/register`,
+                {
+                    method: "POST",
 
-            return (
-                student.email &&
-                student.email.toLowerCase() === email.toLowerCase()
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        name: fullName,
+                        email: email,
+                        password: password
+                    })
+                }
             );
 
-        });
+            const data = await response.json();
 
+            // ========================================
+            // REGISTRATION FAILED
+            // ========================================
 
-        if (existingStudent) {
+            if (!response.ok || !data.success) {
+
+                showRegisterMessage(
+                    data.message || "Registration failed.",
+                    false
+                );
+
+                return;
+            }
+
+            // ========================================
+            // REGISTRATION SUCCESS
+            // ========================================
 
             showRegisterMessage(
-                "This email is already registered. Please login.",
+                "Registration successful! Redirecting to login...",
+                true
+            );
+
+            registerForm.reset();
+
+            setTimeout(function () {
+
+                window.location.href = "login.html";
+
+            }, 1000);
+
+        } catch (error) {
+
+            console.error(
+                "Registration error:",
+                error
+            );
+
+            showRegisterMessage(
+                "Cannot connect to backend. Please make sure the OES server is running.",
                 false
             );
 
-            return;
+        } finally {
+
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = "Register";
+            }
         }
-
-
-        /* ========================================
-           Create Student
-        ======================================== */
-
-        const student = {
-
-            id: Date.now(),
-
-            fullName: fullName,
-
-            email: email,
-
-            mobile: mobile,
-
-            password: password,
-
-            role: "student"
-
-        };
-
-
-        /* ========================================
-           Save Student
-        ======================================== */
-
-        students.push(student);
-
-        localStorage.setItem(
-            "oesStudents",
-            JSON.stringify(students)
-        );
-
-
-        /* ========================================
-           Save Latest Student
-        ======================================== */
-
-        localStorage.setItem(
-            "oesStudent",
-            JSON.stringify(student)
-        );
-
-
-        /* ========================================
-           Success
-        ======================================== */
-
-        showRegisterMessage(
-            "Registration successful! Redirecting to login...",
-            true
-        );
-
-
-        /* ========================================
-           Redirect
-        ======================================== */
-
-        setTimeout(function () {
-
-            window.location.href = "login.html";
-
-        }, 1200);
-
     });
 }
 
 
-/* ========================================
-   Registration Message
-======================================== */
+// ========================================
+// REGISTRATION MESSAGE
+// ========================================
 
 function showRegisterMessage(text, success) {
 
@@ -209,27 +175,22 @@ function showRegisterMessage(text, success) {
         document.getElementById("registerMessage");
 
     if (!message) {
+        alert(text);
         return;
     }
-
 
     message.style.display = "block";
 
     message.textContent = text;
 
-
     if (success) {
 
         message.style.background = "#e8f8f1";
-
         message.style.color = "#059669";
 
     } else {
 
         message.style.background = "#fff0f0";
-
         message.style.color = "#d93025";
-
     }
-
 }

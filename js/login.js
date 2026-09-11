@@ -1,262 +1,213 @@
 /* ========================================
    OES - Student Login System
+   Backend Connected
 ======================================== */
 
+const API_URL = "http://localhost:3000/api";
 
-/* ========================================
-   LOGIN FORM
-======================================== */
-
-const loginForm =
-    document.getElementById("loginForm");
-
+const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
 
-    loginForm.addEventListener(
-        "submit",
-        function (event) {
+    loginForm.addEventListener("submit", async function (event) {
 
-            event.preventDefault();
+        event.preventDefault();
 
+        const email = document
+            .getElementById("loginEmail")
+            .value
+            .trim()
+            .toLowerCase();
 
-            /* ========================================
-               GET LOGIN VALUES
-            ======================================== */
+        const password = document
+            .getElementById("loginPassword")
+            .value;
 
-            const email =
-                document
-                    .getElementById("loginEmail")
-                    .value
-                    .trim()
-                    .toLowerCase();
+        const message = document.getElementById("loginMessage");
 
+        if (message) {
+            message.style.display = "none";
+        }
 
-            const password =
-                document
-                    .getElementById("loginPassword")
-                    .value;
+        // ========================================
+        // VALIDATION
+        // ========================================
 
+        if (!email || !password) {
+            showLoginMessage(
+                "Please enter your email and password.",
+                false
+            );
+            return;
+        }
 
-            const message =
-                document.getElementById(
-                    "loginMessage"
-                );
+        // ========================================
+        // BLOCK ADMIN FROM STUDENT LOGIN
+        // ========================================
 
+        if (email === "admin@oes.com") {
+            showLoginMessage(
+                "Admin account cannot login from Student Login. Please use Admin Login.",
+                false
+            );
+            return;
+        }
 
-            /* Clear previous message */
+        // ========================================
+        // LOGIN BUTTON
+        // ========================================
 
-            if (message) {
-                message.style.display = "none";
-            }
+        const submitButton =
+            loginForm.querySelector('button[type="submit"]');
 
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = "Logging in...";
+        }
 
-            /* ========================================
-               VALIDATION
-            ======================================== */
+        try {
 
-            if (!email || !password) {
+            // ========================================
+            // SEND LOGIN REQUEST TO BACKEND
+            // ========================================
+
+            const response = await fetch(
+                `${API_URL}/auth/login`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            // ========================================
+            // LOGIN FAILED
+            // ========================================
+
+            if (!response.ok || !data.success) {
 
                 showLoginMessage(
-                    "Please enter your email and password.",
+                    data.message || "Invalid email or password.",
                     false
                 );
 
                 return;
             }
 
+            // ========================================
+            // LOGIN SUCCESS
+            // ========================================
 
-            /* ========================================
-               BLOCK ADMIN FROM STUDENT LOGIN
-            ======================================== */
+            const user = data.user;
 
-            const adminEmail =
-                "admin@example.com";
+            // Save JWT token
+            localStorage.setItem(
+                "oesToken",
+                data.token
+            );
 
+            // Save role
+            localStorage.setItem(
+                "oesUserRole",
+                user.role
+            );
 
-            if (email === adminEmail) {
+            // Save email
+            localStorage.setItem(
+                "oesUserEmail",
+                user.email
+            );
 
-                showLoginMessage(
-                    "Admin account cannot login from Student Login. Please use Admin Login.",
-                    false
-                );
+            // Save login status
+            localStorage.setItem(
+                "oesLoggedIn",
+                "true"
+            );
 
-                return;
-            }
+            // Save student information
+            localStorage.setItem(
+                "oesStudent",
+                JSON.stringify(user)
+            );
 
+            localStorage.setItem(
+                "oesCurrentStudent",
+                JSON.stringify(user)
+            );
 
-            /* ========================================
-               LOAD STUDENTS
-            ======================================== */
-
-            let students = [];
-
-            try {
-
-                students = JSON.parse(
-                    localStorage.getItem(
-                        "oesStudents"
-                    ) || "[]"
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Error loading students:",
-                    error
-                );
-
-                students = [];
-
-            }
-
-
-            if (!Array.isArray(students)) {
-                students = [];
-            }
-
-
-            /* ========================================
-               FIND STUDENT
-            ======================================== */
-
-            const student =
-                students.find(
-                    function (item) {
-
-                        return (
-                            item &&
-                            item.email &&
-                            item.email
-                                .toLowerCase()
-                                === email &&
-                            item.password
-                                === password &&
-                            item.role
-                                === "student"
-                        );
-
-                    }
-                );
-
-
-            /* ========================================
-               STUDENT FOUND
-            ======================================== */
-
-            if (student) {
-
-                /* Set Student Role */
-
-                localStorage.setItem(
-                    "oesUserRole",
-                    "student"
-                );
-
-
-                /* Set Student Email */
-
-                localStorage.setItem(
-                    "oesUserEmail",
-                    student.email
-                );
-
-
-                /* Login Status */
-
-                localStorage.setItem(
-                    "oesLoggedIn",
-                    "true"
-                );
-
-
-                /* Current Student */
-
-                localStorage.setItem(
-                    "oesStudent",
-                    JSON.stringify(student)
-                );
-
-
-                localStorage.setItem(
-                    "oesCurrentStudent",
-                    JSON.stringify(student)
-                );
-
-
-                /* Redirect */
-
-                window.location.href =
-                    "dashboard.html";
-
-
-                return;
-            }
-
-
-            /* ========================================
-               INVALID LOGIN
-            ======================================== */
+            // ========================================
+            // REDIRECT
+            // ========================================
 
             showLoginMessage(
-                "Invalid student email or password.",
+                "Login successful! Redirecting...",
+                true
+            );
+
+            setTimeout(function () {
+                window.location.href = "dashboard.html";
+            }, 500);
+
+        } catch (error) {
+
+            console.error(
+                "Login error:",
+                error
+            );
+
+            showLoginMessage(
+                "Cannot connect to backend. Please make sure the OES server is running.",
                 false
             );
 
-        }
-    );
+        } finally {
 
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = "Login";
+            }
+        }
+
+    });
 }
 
 
-/* ========================================
-   LOGIN MESSAGE
-======================================== */
+// ========================================
+// LOGIN MESSAGE
+// ========================================
 
-function showLoginMessage(
-    text,
-    success
-) {
+function showLoginMessage(text, success) {
 
     const message =
-        document.getElementById(
-            "loginMessage"
-        );
-
+        document.getElementById("loginMessage");
 
     if (!message) {
-
         alert(text);
-
         return;
-
     }
 
+    message.style.display = "block";
 
-    message.style.display =
-        "block";
-
-
-    message.textContent =
-        text;
-
+    message.textContent = text;
 
     if (success) {
 
-        message.style.background =
-            "#e8f8f1";
-
-        message.style.color =
-            "#059669";
+        message.style.background = "#e8f8f1";
+        message.style.color = "#059669";
 
     } else {
 
-        message.style.background =
-            "#fff0f0";
-
-        message.style.color =
-            "#d93025";
+        message.style.background = "#fff0f0";
+        message.style.color = "#d93025";
 
     }
-
 }

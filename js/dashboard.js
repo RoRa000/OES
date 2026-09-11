@@ -1,371 +1,317 @@
 /* ========================================
    OES - Student Dashboard
+   Backend Connected
 ======================================== */
 
-
-/* ========================================
-   LOGIN PROTECTION
-======================================== */
-
-const userRole =
-    localStorage.getItem("oesUserRole");
-
-const userEmail =
-    localStorage.getItem("oesUserEmail");
+const API_URL = "http://localhost:3000/api";
 
 
-if (
-    userRole !== "student" ||
-    !userEmail
-) {
+// ==========================================
+// LOGIN PROTECTION
+// ==========================================
+
+const userRole = localStorage.getItem("oesUserRole");
+const userEmail = localStorage.getItem("oesUserEmail");
+
+if (userRole !== "student" || !userEmail) {
     window.location.href = "login.html";
 }
 
 
-/* ========================================
-   GET ALL STUDENTS
-======================================== */
+// ==========================================
+// LOAD DASHBOARD
+// ==========================================
 
-const students =
-    JSON.parse(
-        localStorage.getItem("oesStudents") || "[]"
-    );
+document.addEventListener("DOMContentLoaded", function () {
 
+    loadStudentDashboard();
 
-/* ========================================
-   FIND LOGGED-IN STUDENT
-======================================== */
-
-let registeredStudent =
-    students.find(function (student) {
-
-        return (
-            student.email &&
-            student.email.toLowerCase() ===
-            userEmail.toLowerCase()
-        );
-
-    });
+});
 
 
-/* ========================================
-   CURRENT STUDENT FALLBACK
-======================================== */
+// ==========================================
+// MAIN DASHBOARD FUNCTION
+// ==========================================
 
-if (!registeredStudent) {
-
-    const currentStudent =
-        JSON.parse(
-            localStorage.getItem("oesCurrentStudent")
-        );
-
-
-    if (
-        currentStudent &&
-        currentStudent.email &&
-        currentStudent.email.toLowerCase() ===
-        userEmail.toLowerCase()
-    ) {
-
-        registeredStudent =
-            currentStudent;
-
-    }
-
-}
-
-
-/* ========================================
-   GET AVAILABLE EXAMS
-======================================== */
-
-let availableExams = [];
-
-
-const savedExams =
-    localStorage.getItem("oesExams");
-
-
-if (savedExams) {
+async function loadStudentDashboard() {
 
     try {
 
-        const parsedExams =
-            JSON.parse(savedExams);
+        // ------------------------------
+        // GET LOGGED-IN STUDENT
+        // ------------------------------
 
+        const studentData =
+            localStorage.getItem("oesStudent");
 
-        if (Array.isArray(parsedExams)) {
+        let student = null;
 
-            availableExams =
-                parsedExams.filter(
-                    function (exam) {
+        if (studentData) {
 
-                        return (
-                            exam &&
-                            exam.status === "ACTIVE"
-                        );
-
-                    }
-                );
+            try {
+                student = JSON.parse(studentData);
+            } catch (error) {
+                console.error("Student data error:", error);
+            }
 
         }
+
+        // ------------------------------
+        // DISPLAY STUDENT NAME
+        // ------------------------------
+
+        const studentName =
+            student?.name || "Student";
+
+        const nameElements = [
+            document.getElementById("studentName"),
+            document.getElementById("welcomeName")
+        ];
+
+        nameElements.forEach(function (element) {
+
+            if (element) {
+                element.textContent = studentName;
+            }
+
+        });
+
+
+        // ------------------------------
+        // LOAD EXAMS + RESULTS
+        // ------------------------------
+
+        await loadAvailableExams();
+
+        await loadStudentResults();
 
     } catch (error) {
 
         console.error(
-            "Error loading exams:",
+            "Dashboard loading error:",
             error
         );
-
-        availableExams = [];
 
     }
 
 }
 
 
-/* ========================================
-   GET RESULT HISTORY
-======================================== */
+// ==========================================
+// LOAD AVAILABLE EXAMS
+// ==========================================
 
-let allResults = [];
-
-
-const savedResults =
-    localStorage.getItem("oesResults");
-
-
-if (savedResults) {
+async function loadAvailableExams() {
 
     try {
 
-        const parsedResults =
-            JSON.parse(savedResults);
-
-
-        if (Array.isArray(parsedResults)) {
-
-            allResults =
-                parsedResults;
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            "Error loading results:",
-            error
+        const response = await fetch(
+            `${API_URL}/exams/visible`
         );
 
-        allResults = [];
+        const data = await response.json();
 
-    }
+        if (!response.ok || !data.success) {
 
-}
-
-
-/* ========================================
-   FIND ONLY CURRENT STUDENT RESULTS
-======================================== */
-
-const studentResults =
-    allResults.filter(
-        function (result) {
-
-            return (
-                result &&
-                result.studentEmail &&
-                result.studentEmail.toLowerCase() ===
-                userEmail.toLowerCase()
+            console.error(
+                "Failed to load exams:",
+                data.message
             );
 
+            showExamMessage(
+                "Unable to load exams."
+            );
+
+            return;
         }
-    );
+
+        const exams = data.exams || [];
+
+        // Get question count for every exam
+        const examsWithQuestions =
+            await Promise.all(
+                exams.map(async function (exam) {
+
+                    try {
+
+                        const questionResponse =
+                            await fetch(
+                                `${API_URL}/questions/exam/${exam.id}`
+                            );
+
+                        const questionData =
+                            await questionResponse.json();
+
+                        return {
+                            ...exam,
+                            questionCount:
+                                questionData.success
+                                    ? questionData.questions.length
+                                    : 0
+                        };
+
+                    } catch (error) {
+
+                        console.error(
+                            "Question count error:",
+                            error
+                        );
+
+                        return {
+                            ...exam,
+                            questionCount: 0
+                        };
+
+                    }
+
+                })
+            );
 
 
-/* ========================================
-   GET HTML ELEMENTS
-======================================== */
+        displayExams(examsWithQuestions);
 
-const studentName =
-    document.getElementById("studentName");
+    } catch (error) {
 
-const totalExams =
-    document.getElementById("totalExams");
+        console.error(
+            "Exam loading error:",
+            error
+        );
 
-const completedExams =
-    document.getElementById("completedExams");
+        showExamMessage(
+            "Cannot connect to backend. Please make sure the OES server is running."
+        );
 
-const pendingExams =
-    document.getElementById("pendingExams");
-
-const averageScore =
-    document.getElementById("averageScore");
-
-const emptyResults =
-    document.getElementById("emptyResults");
-
-const resultCard =
-    document.getElementById("resultCard");
-
-const dashboardMarks =
-    document.getElementById("dashboardMarks");
-
-const dashboardPercentage =
-    document.getElementById("dashboardPercentage");
-
-const dashboardCorrect =
-    document.getElementById("dashboardCorrect");
-
-const dashboardWrong =
-    document.getElementById("dashboardWrong");
-
-
-/* ========================================
-   FIND EXAM CONTAINER
-======================================== */
-
-const examGrid =
-    document.querySelector(
-        ".dashboard-section .exam-grid"
-    );
-
-
-/* ========================================
-   DISPLAY STUDENT NAME
-======================================== */
-
-if (
-    registeredStudent &&
-    studentName
-) {
-
-    studentName.textContent =
-        registeredStudent.fullName;
+    }
 
 }
 
 
-/* ========================================
-   DISPLAY AVAILABLE EXAMS
-======================================== */
+// ==========================================
+// DISPLAY EXAMS
+// ==========================================
 
-function displayAvailableExams() {
+function displayExams(exams) {
 
-    if (!examGrid) {
+    const examContainer =
+        document.getElementById("examContainer") ||
+        document.getElementById("examList") ||
+        document.querySelector(".exam-grid") ||
+        document.querySelector(".exams-grid");
+
+    if (!examContainer) {
+
+        console.warn(
+            "Exam container not found."
+        );
+
         return;
     }
 
-
-    /* Remove old hard-coded exam cards */
-
-    examGrid.innerHTML = "";
+    examContainer.innerHTML = "";
 
 
-    /* No active exams */
+    // ------------------------------
+    // NO EXAMS
+    // ------------------------------
 
-    if (availableExams.length === 0) {
+    if (exams.length === 0) {
 
-        examGrid.innerHTML = `
+        examContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">📝</div>
 
-            <div class="empty-results">
-
-                <div class="empty-icon">
-                    📝
-                </div>
-
-                <h3>
-                    No Active Examinations
-                </h3>
+                <h3>No Exams Available</h3>
 
                 <p>
-                    There are currently no active examinations available.
+                    Currently there are no exams available.
+                    Please check again later.
                 </p>
-
             </div>
-
         `;
 
         return;
-
     }
 
 
-    /* Create exam cards */
+    // ------------------------------
+    // CREATE EXAM CARDS
+    // ------------------------------
 
-    availableExams.forEach(
-        function (exam) {
+    exams.forEach(function (exam) {
 
-            const examCard =
-                document.createElement("div");
+        const card =
+            document.createElement("div");
 
-
-            examCard.className =
-                "exam-card";
+        card.className = "exam-card";
 
 
-            examCard.innerHTML = `
+        const questionCount =
+            exam.questionCount || 0;
 
-                <div class="exam-card-top">
+        const negativeMark =
+            Number(exam.negative_mark || 0);
 
-                    <div class="exam-small-icon">
-                        📝
-                    </div>
 
-                    <span class="exam-status">
-                        ${exam.status}
-                    </span>
+        card.innerHTML = `
 
-                </div>
+            <div class="exam-card-header">
 
+                <span class="exam-status">
+                    ACTIVE
+                </span>
+
+            </div>
+
+
+            <div class="exam-card-body">
 
                 <h3>
-                    ${exam.name}
+                    ${escapeHTML(exam.name)}
                 </h3>
 
-
                 <p class="exam-category">
-                    ${exam.category}
+                    ${escapeHTML(exam.category || "General")}
                 </p>
 
 
                 <div class="exam-details">
 
-                    <div>
+                    <div class="exam-detail">
 
-                        <span>
-                            Questions
+                        <span class="detail-icon">
+                            📝
                         </span>
 
-                        <strong>
-                            ${exam.questions}
-                        </strong>
+                        <span>
+                            ${questionCount} Questions
+                        </span>
 
                     </div>
 
 
-                    <div>
+                    <div class="exam-detail">
 
-                        <span>
-                            Duration
+                        <span class="detail-icon">
+                            ⏱️
                         </span>
 
-                        <strong>
-                            ${exam.duration} Min
-                        </strong>
+                        <span>
+                            ${exam.duration} Minutes
+                        </span>
 
                     </div>
 
 
-                    <div>
+                    <div class="exam-detail">
 
-                        <span>
-                            Negative
+                        <span class="detail-icon">
+                            ❌
                         </span>
 
-                        <strong>
-                            ${exam.negativeMark}
-                        </strong>
+                        <span>
+                            Negative:
+                            ${negativeMark}
+                        </span>
 
                     </div>
 
@@ -374,248 +320,391 @@ function displayAvailableExams() {
 
                 <a
                     href="exam.html?examId=${exam.id}"
-                    class="btn btn-primary"
+                    class="btn btn-primary exam-start-btn"
                 >
                     Start Exam
                 </a>
 
-            `;
+            </div>
+        `;
 
 
-            examGrid.appendChild(
-                examCard
+        examContainer.appendChild(card);
+
+    });
+
+}
+
+
+// ==========================================
+// LOAD STUDENT RESULTS
+// ==========================================
+
+async function loadStudentResults() {
+
+    try {
+
+        const studentData =
+            localStorage.getItem("oesStudent");
+
+        if (!studentData) {
+            return;
+        }
+
+        const student =
+            JSON.parse(studentData);
+
+        if (!student.id) {
+
+            console.warn(
+                "Student ID not found."
             );
 
+            return;
         }
+
+
+        const response =
+            await fetch(
+                `${API_URL}/results/student/${student.id}`
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok || !data.success) {
+
+            console.error(
+                "Result loading failed:",
+                data.message
+            );
+
+            return;
+        }
+
+
+        const results =
+            data.results || [];
+
+
+        displayResults(results);
+
+        updateStatistics(results);
+
+
+    } catch (error) {
+
+        console.error(
+            "Result loading error:",
+            error
+        );
+
+    }
+
+}
+
+
+// ==========================================
+// DISPLAY RESULTS
+// ==========================================
+
+function displayResults(results) {
+
+    const resultContainer =
+        document.getElementById("resultContainer") ||
+        document.getElementById("resultList") ||
+        document.querySelector(".result-list");
+
+
+    if (!resultContainer) {
+        return;
+    }
+
+
+    resultContainer.innerHTML = "";
+
+
+    if (results.length === 0) {
+
+        resultContainer.innerHTML = `
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    📊
+                </div>
+
+                <h3>
+                    No Results Yet
+                </h3>
+
+                <p>
+                    Complete an exam to see your result here.
+                </p>
+
+            </div>
+        `;
+
+        return;
+    }
+
+
+    results.forEach(function (result) {
+
+        const resultCard =
+            document.createElement("div");
+
+        resultCard.className =
+            "result-card";
+
+
+        resultCard.innerHTML = `
+
+            <div class="result-info">
+
+                <h3>
+                    ${escapeHTML(
+                        result.exam_name || "Exam"
+                    )}
+                </h3>
+
+                <p>
+                    ${escapeHTML(
+                        result.category || "General"
+                    )}
+                </p>
+
+            </div>
+
+
+            <div class="result-score">
+
+                <strong>
+                    ${result.marks}
+                </strong>
+
+                <span>
+                    Marks
+                </span>
+
+            </div>
+
+
+            <div class="result-percentage">
+
+                ${result.percentage}%
+
+            </div>
+
+
+            <div class="result-action">
+
+                <a
+                    href="result.html?resultId=${result.id}"
+                    class="btn btn-secondary"
+                >
+                    View Result
+                </a>
+
+            </div>
+
+        `;
+
+
+        resultContainer.appendChild(
+            resultCard
+        );
+
+    });
+
+}
+
+
+// ==========================================
+// UPDATE DASHBOARD STATISTICS
+// ==========================================
+
+function updateStatistics(results) {
+
+    const totalExams =
+        results.length;
+
+
+    let totalCorrect = 0;
+    let totalWrong = 0;
+    let totalMarks = 0;
+
+
+    results.forEach(function (result) {
+
+        totalCorrect +=
+            Number(result.correct || 0);
+
+        totalWrong +=
+            Number(result.wrong || 0);
+
+        totalMarks +=
+            Number(result.marks || 0);
+
+    });
+
+
+    // ------------------------------
+    // TOTAL EXAMS
+    // ------------------------------
+
+    setText(
+        "totalExams",
+        totalExams
+    );
+
+
+    setText(
+        "examsCompleted",
+        totalExams
+    );
+
+
+    // ------------------------------
+    // CORRECT ANSWERS
+    // ------------------------------
+
+    setText(
+        "totalCorrect",
+        totalCorrect
+    );
+
+
+    // ------------------------------
+    // WRONG ANSWERS
+    // ------------------------------
+
+    setText(
+        "totalWrong",
+        totalWrong
+    );
+
+
+    // ------------------------------
+    // TOTAL MARKS
+    // ------------------------------
+
+    setText(
+        "totalMarks",
+        totalMarks.toFixed(2)
+    );
+
+
+    // ------------------------------
+    // AVERAGE PERCENTAGE
+    // ------------------------------
+
+    let averagePercentage = 0;
+
+
+    if (results.length > 0) {
+
+        let percentageTotal = 0;
+
+        results.forEach(function (result) {
+
+            percentageTotal +=
+                Number(result.percentage || 0);
+
+        });
+
+
+        averagePercentage =
+            percentageTotal / results.length;
+
+    }
+
+
+    setText(
+        "averagePercentage",
+        averagePercentage.toFixed(2) + "%"
     );
 
 }
 
 
-/* ========================================
-   TOTAL AVAILABLE EXAMS
-======================================== */
+// ==========================================
+// HELPER: SET TEXT
+// ==========================================
 
-if (totalExams) {
+function setText(id, value) {
 
-    totalExams.textContent =
-        availableExams.length;
+    const element =
+        document.getElementById(id);
 
-}
-
-
-/* ========================================
-   DISPLAY EXAMS
-======================================== */
-
-displayAvailableExams();
-
-
-/* ========================================
-   CURRENT STUDENT RESULT
-======================================== */
-
-const latestStudentResult =
-    studentResults.length > 0
-        ? studentResults[studentResults.length - 1]
-        : null;
-
-
-/* ========================================
-   COMPLETED EXAMS
-======================================== */
-
-if (completedExams) {
-
-    completedExams.textContent =
-        studentResults.length;
-
-}
-
-
-/* ========================================
-   PENDING EXAMS
-======================================== */
-
-if (pendingExams) {
-
-    const pending =
-        Math.max(
-            availableExams.length -
-            studentResults.length,
-            0
-        );
-
-
-    pendingExams.textContent =
-        pending;
-
-}
-
-
-/* ========================================
-   STUDENT HAS COMPLETED EXAM
-======================================== */
-
-if (latestStudentResult) {
-
-
-    /* ========================================
-       AVERAGE SCORE
-    ======================================== */
-
-    if (averageScore) {
-
-        const totalPercentage =
-            studentResults.reduce(
-                function (total, result) {
-
-                    return (
-                        total +
-                        Number(
-                            result.percentage || 0
-                        )
-                    );
-
-                },
-                0
-            );
-
-
-        const average =
-            studentResults.length > 0
-                ? totalPercentage /
-                  studentResults.length
-                : 0;
-
-
-        averageScore.textContent =
-            average.toFixed(2) + "%";
-
-    }
-
-
-    /* ========================================
-       SHOW RESULT CARD
-    ======================================== */
-
-    if (emptyResults) {
-
-        emptyResults.style.display =
-            "none";
-
-    }
-
-
-    if (resultCard) {
-
-        resultCard.style.display =
-            "block";
-
-    }
-
-
-    /* Marks */
-
-    if (dashboardMarks) {
-
-        dashboardMarks.textContent =
-            Number(
-                latestStudentResult.marks || 0
-            ).toFixed(2);
-
-    }
-
-
-    /* Percentage */
-
-    if (dashboardPercentage) {
-
-        dashboardPercentage.textContent =
-            Number(
-                latestStudentResult.percentage || 0
-            ).toFixed(2) + "%";
-
-    }
-
-
-    /* Correct */
-
-    if (dashboardCorrect) {
-
-        dashboardCorrect.textContent =
-            latestStudentResult.correct || 0;
-
-    }
-
-
-    /* Wrong */
-
-    if (dashboardWrong) {
-
-        dashboardWrong.textContent =
-            latestStudentResult.wrong || 0;
-
-    }
-
-
-} else {
-
-
-    /* ========================================
-       NO EXAM COMPLETED
-    ======================================== */
-
-    if (averageScore) {
-
-        averageScore.textContent =
-            "0.00%";
-
-    }
-
-
-    /* Hide result card */
-
-    if (resultCard) {
-
-        resultCard.style.display =
-            "none";
-
-    }
-
-
-    /* Show empty result */
-
-    if (emptyResults) {
-
-        emptyResults.style.display =
-            "block";
-
+    if (element) {
+        element.textContent = value;
     }
 
 }
 
 
-/* ========================================
-   DEBUG
-======================================== */
+// ==========================================
+// HELPER: SHOW EXAM MESSAGE
+// ==========================================
+
+function showExamMessage(message) {
+
+    const examContainer =
+        document.getElementById("examContainer") ||
+        document.getElementById("examList") ||
+        document.querySelector(".exam-grid") ||
+        document.querySelector(".exams-grid");
+
+    if (!examContainer) {
+        return;
+    }
+
+
+    examContainer.innerHTML = `
+
+        <div class="empty-state">
+
+            <div class="empty-icon">
+                ⚠️
+            </div>
+
+            <h3>
+                ${escapeHTML(message)}
+            </h3>
+
+        </div>
+
+    `;
+
+}
+
+
+// ==========================================
+// HELPER: ESCAPE HTML
+// ==========================================
+
+function escapeHTML(value) {
+
+    if (value === null || value === undefined) {
+        return "";
+    }
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+// ==========================================
+// DEBUG
+// ==========================================
 
 console.log(
-    "Logged-in student:",
-    registeredStudent
-);
-
-console.log(
-    "Logged-in email:",
-    userEmail
-);
-
-console.log(
-    "Available active exams:",
-    availableExams
-);
-
-console.log(
-    "Current student results:",
-    studentResults
+    "OES Dashboard Backend Connected"
 );
