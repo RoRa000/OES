@@ -9,25 +9,19 @@ const questionRoutes = require("./routes/questions");
 const resultRoutes = require("./routes/results");
 
 const app = express();
-const PORT = 3000;
 
-// ===============================
-// MIDDLEWARE
-// ===============================
+// Render provides PORT automatically.
+// Local computer par 3000 use hoga.
+const PORT = process.env.PORT || 3000;
+
 app.use(cors());
 app.use(express.json());
 
-// ===============================
-// API ROUTES
-// ===============================
 app.use("/api/auth", authRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/questions", questionRoutes);
 app.use("/api/results", resultRoutes);
 
-// ===============================
-// HOME
-// ===============================
 app.get("/", (req, res) => {
     res.json({
         success: true,
@@ -35,9 +29,6 @@ app.get("/", (req, res) => {
     });
 });
 
-// ===============================
-// DATABASE TEST
-// ===============================
 app.get("/api/test", (req, res) => {
     db.get("SELECT 1 AS test", (err, row) => {
         if (err) {
@@ -56,9 +47,6 @@ app.get("/api/test", (req, res) => {
     });
 });
 
-// ===============================
-// START SERVER
-// ===============================
 app.listen(PORT, () => {
-    console.log(`OES Backend running at http://localhost:${PORT}`);
+    console.log(`OES Backend running on port ${PORT}`);
 });
