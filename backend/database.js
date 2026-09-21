@@ -11,7 +11,10 @@ const db = new sqlite3.Database("./oes.db", (err) => {
 
 db.serialize(() => {
 
+    // ==========================================
     // USERS TABLE
+    // ==========================================
+
     db.run(`
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,7 +26,11 @@ db.serialize(() => {
         )
     `);
 
+
+    // ==========================================
     // EXAMS TABLE
+    // ==========================================
+
     db.run(`
         CREATE TABLE IF NOT EXISTS exams (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +44,11 @@ db.serialize(() => {
         )
     `);
 
+
+    // ==========================================
     // QUESTIONS TABLE
+    // ==========================================
+
     db.run(`
         CREATE TABLE IF NOT EXISTS questions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,7 +65,11 @@ db.serialize(() => {
         )
     `);
 
+
+    // ==========================================
     // RESULTS TABLE
+    // ==========================================
+
     db.run(`
         CREATE TABLE IF NOT EXISTS results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,7 +87,11 @@ db.serialize(() => {
         )
     `);
 
+
+    // ==========================================
     // RESULT ANSWERS TABLE
+    // ==========================================
+
     db.run(`
         CREATE TABLE IF NOT EXISTS result_answers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -85,23 +104,111 @@ db.serialize(() => {
         )
     `);
 
+
+    // ==========================================
     // DEFAULT ADMIN
+    // ==========================================
+
     const adminPassword = bcrypt.hashSync("admin123", 10);
 
-    db.run(
-        `
-        INSERT OR IGNORE INTO users
-        (name, email, password, role)
-        VALUES (?, ?, ?, ?)
-        `,
-        [
-            "OES Admin",
-            "admin@oes.com",
-            adminPassword,
-            "admin"
-        ]
+    db.get(
+        `SELECT id FROM users WHERE email = ?`,
+        ["admin@oes.com"],
+        (err, admin) => {
+
+            if (err) {
+                console.error(
+                    "Admin check failed:",
+                    err.message
+                );
+                return;
+            }
+
+
+            // --------------------------------------
+            // ADMIN DOES NOT EXIST → CREATE ADMIN
+            // --------------------------------------
+
+            if (!admin) {
+
+                db.run(
+                    `
+                    INSERT INTO users
+                    (name, email, password, role)
+                    VALUES (?, ?, ?, ?)
+                    `,
+                    [
+                        "OES Admin",
+                        "admin@oes.com",
+                        adminPassword,
+                        "admin"
+                    ],
+                    (insertErr) => {
+
+                        if (insertErr) {
+
+                            console.error(
+                                "Admin creation failed:",
+                                insertErr.message
+                            );
+
+                        } else {
+
+                            console.log(
+                                "Default admin created successfully."
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+
+
+            // --------------------------------------
+            // ADMIN ALREADY EXISTS → RESET PASSWORD
+            // --------------------------------------
+
+            else {
+
+                db.run(
+                    `
+                    UPDATE users
+                    SET password = ?, role = ?
+                    WHERE email = ?
+                    `,
+                    [
+                        adminPassword,
+                        "admin",
+                        "admin@oes.com"
+                    ],
+                    (updateErr) => {
+
+                        if (updateErr) {
+
+                            console.error(
+                                "Admin update failed:",
+                                updateErr.message
+                            );
+
+                        } else {
+
+                            console.log(
+                                "Default admin credentials updated."
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+
+        }
     );
 
 });
+
 
 module.exports = db;
