@@ -1,47 +1,40 @@
 /* ========================================
    OES - Admin Login
+   LIVE BACKEND CONNECTED
 ======================================== */
 
 
-/* ========================================
-   ADMIN CREDENTIALS
-======================================== */
+// ==========================================
+// LIVE RENDER BACKEND
+// ==========================================
 
-/*
-   Public registration se admin create nahi hoga.
-
-   Sirf ye credentials Admin Login ke liye
-   use honge.
-*/
-
-const ADMIN_EMAIL = "admin@example.com";
-const ADMIN_PASSWORD = "admin123";
+const API_URL = "https://oes-nx6c.onrender.com/api";
 
 
-/* ========================================
-   LOGIN FORM
-======================================== */
+// ==========================================
+// LOGIN FORM
+// ==========================================
 
 const adminLoginForm =
     document.getElementById("adminLoginForm");
 
 
-/* ========================================
-   FORM SUBMIT
-======================================== */
+// ==========================================
+// FORM SUBMIT
+// ==========================================
 
 if (adminLoginForm) {
 
     adminLoginForm.addEventListener(
         "submit",
-        function (event) {
+        async function (event) {
 
             event.preventDefault();
 
 
-            /* ========================================
-               GET VALUES
-            ======================================== */
+            // ==========================================
+            // GET VALUES
+            // ==========================================
 
             const email =
                 document
@@ -50,16 +43,15 @@ if (adminLoginForm) {
                     .trim()
                     .toLowerCase();
 
-
             const password =
                 document
                     .getElementById("adminPassword")
                     .value;
 
 
-            /* ========================================
-               VALIDATION
-            ======================================== */
+            // ==========================================
+            // VALIDATION
+            // ==========================================
 
             if (!email || !password) {
 
@@ -72,60 +64,140 @@ if (adminLoginForm) {
             }
 
 
-            /* ========================================
-               CHECK ADMIN CREDENTIALS
-            ======================================== */
-
-            if (
-                email !== ADMIN_EMAIL ||
-                password !== ADMIN_PASSWORD
-            ) {
-
-                showAdminMessage(
-                    "Invalid admin email or password.",
-                    false
-                );
-
-                return;
-            }
-
-
-            /* ========================================
-               ADMIN LOGIN SUCCESS
-            ======================================== */
-
-            localStorage.setItem(
-                "oesUserRole",
-                "admin"
-            );
-
-
-            localStorage.setItem(
-                "oesUserEmail",
-                ADMIN_EMAIL
-            );
-
-
-            /* ========================================
-               SUCCESS MESSAGE
-            ======================================== */
+            // ==========================================
+            // SHOW LOADING
+            // ==========================================
 
             showAdminMessage(
-                "Admin login successful! Redirecting...",
+                "Checking admin credentials...",
                 true
             );
 
 
-            /* ========================================
-               REDIRECT
-            ======================================== */
+            try {
 
-            setTimeout(function () {
+                // ==========================================
+                // SEND LOGIN REQUEST TO BACKEND
+                // ==========================================
 
-                window.location.href =
-                    "admin.html";
+                const response = await fetch(
+                    `${API_URL}/auth/login`,
+                    {
+                        method: "POST",
 
-            }, 800);
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            email: email,
+                            password: password
+                        })
+                    }
+                );
+
+
+                // ==========================================
+                // GET RESPONSE
+                // ==========================================
+
+                const data = await response.json();
+
+
+                // ==========================================
+                // LOGIN FAILED
+                // ==========================================
+
+                if (!response.ok || !data.success) {
+
+                    showAdminMessage(
+                        data.message ||
+                        "Invalid admin email or password.",
+                        false
+                    );
+
+                    return;
+                }
+
+
+                // ==========================================
+                // CHECK ADMIN ROLE
+                // ==========================================
+
+                if (
+                    !data.user ||
+                    data.user.role !== "admin"
+                ) {
+
+                    showAdminMessage(
+                        "This account is not an admin account.",
+                        false
+                    );
+
+                    return;
+                }
+
+
+                // ==========================================
+                // SAVE LOGIN DATA
+                // ==========================================
+
+                localStorage.setItem(
+                    "oesUserRole",
+                    "admin"
+                );
+
+                localStorage.setItem(
+                    "oesUserEmail",
+                    data.user.email
+                );
+
+                localStorage.setItem(
+                    "oesCurrentUser",
+                    JSON.stringify(data.user)
+                );
+
+                localStorage.setItem(
+                    "oesToken",
+                    data.token
+                );
+
+
+                // ==========================================
+                // SUCCESS
+                // ==========================================
+
+                showAdminMessage(
+                    "Admin login successful! Redirecting...",
+                    true
+                );
+
+
+                // ==========================================
+                // REDIRECT
+                // ==========================================
+
+                setTimeout(function () {
+
+                    window.location.href =
+                        "admin.html";
+
+                }, 800);
+
+
+            } catch (error) {
+
+                console.error(
+                    "Admin login error:",
+                    error
+                );
+
+                showAdminMessage(
+                    "Cannot connect to backend. Please try again.",
+                    false
+                );
+
+            }
 
         }
     );
@@ -133,9 +205,9 @@ if (adminLoginForm) {
 }
 
 
-/* ========================================
-   ADMIN MESSAGE
-======================================== */
+// ==========================================
+// ADMIN MESSAGE
+// ==========================================
 
 function showAdminMessage(
     text,
