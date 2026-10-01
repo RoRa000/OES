@@ -24,7 +24,6 @@ if (logoutBtn) {
         localStorage.removeItem("oesStudent");
         localStorage.removeItem("oesLoggedIn");
 
-        // Go to student login page
         window.location.href = "login.html";
 
     });
