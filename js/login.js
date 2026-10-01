@@ -1,9 +1,8 @@
 /* ========================================
    OES - Student Login System
-   Live Render Backend Connected
+   LIVE RENDER BACKEND
 ======================================== */
 
-// LIVE RENDER BACKEND
 const API_URL = "https://oes-nx6c.onrender.com/api";
 
 const loginForm = document.getElementById("loginForm");
@@ -43,7 +42,7 @@ if (loginForm) {
         }
 
         // ========================================
-        // BLOCK ADMIN FROM STUDENT LOGIN
+        // BLOCK ADMIN ACCOUNT
         // ========================================
 
         if (email === "admin@oes.com") {
@@ -69,7 +68,7 @@ if (loginForm) {
         try {
 
             // ========================================
-            // SEND LOGIN REQUEST
+            // LIVE BACKEND LOGIN
             // ========================================
 
             const response = await fetch(
@@ -159,13 +158,15 @@ if (loginForm) {
             // ========================================
 
             setTimeout(function () {
+
                 window.location.href = "dashboard.html";
-            }, 500);
+
+            }, 700);
 
         } catch (error) {
 
             console.error(
-                "Login error:",
+                "Student login error:",
                 error
             );
 
