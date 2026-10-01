@@ -3,7 +3,8 @@
    Backend Connected
 ======================================== */
 
-const API_URL = "http://localhost:3000/api";
+// LIVE RENDER BACKEND
+const API_URL = "https://oes-nx6c.onrender.com/api";
 
 
 // ==========================================
@@ -49,12 +50,20 @@ async function loadStudentDashboard() {
         if (studentData) {
 
             try {
+
                 student = JSON.parse(studentData);
+
             } catch (error) {
-                console.error("Student data error:", error);
+
+                console.error(
+                    "Student data error:",
+                    error
+                );
+
             }
 
         }
+
 
         // ------------------------------
         // DISPLAY STUDENT NAME
@@ -84,6 +93,7 @@ async function loadStudentDashboard() {
         await loadAvailableExams();
 
         await loadStudentResults();
+
 
     } catch (error) {
 
@@ -125,11 +135,15 @@ async function loadAvailableExams() {
             return;
         }
 
+
         const exams = data.exams || [];
 
+
         // Get question count for every exam
+
         const examsWithQuestions =
             await Promise.all(
+
                 exams.map(async function (exam) {
 
                     try {
@@ -143,12 +157,16 @@ async function loadAvailableExams() {
                             await questionResponse.json();
 
                         return {
+
                             ...exam,
+
                             questionCount:
                                 questionData.success
                                     ? questionData.questions.length
                                     : 0
+
                         };
+
 
                     } catch (error) {
 
@@ -158,17 +176,22 @@ async function loadAvailableExams() {
                         );
 
                         return {
+
                             ...exam,
+
                             questionCount: 0
+
                         };
 
                     }
 
                 })
+
             );
 
 
         displayExams(examsWithQuestions);
+
 
     } catch (error) {
 
@@ -178,7 +201,7 @@ async function loadAvailableExams() {
         );
 
         showExamMessage(
-            "Cannot connect to backend. Please make sure the OES server is running."
+            "Cannot connect to backend. Please try again."
         );
 
     }
@@ -198,6 +221,7 @@ function displayExams(exams) {
         document.querySelector(".exam-grid") ||
         document.querySelector(".exams-grid");
 
+
     if (!examContainer) {
 
         console.warn(
@@ -206,6 +230,7 @@ function displayExams(exams) {
 
         return;
     }
+
 
     examContainer.innerHTML = "";
 
@@ -217,16 +242,24 @@ function displayExams(exams) {
     if (exams.length === 0) {
 
         examContainer.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">📝</div>
 
-                <h3>No Exams Available</h3>
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    📝
+                </div>
+
+                <h3>
+                    No Exams Available
+                </h3>
 
                 <p>
                     Currently there are no exams available.
                     Please check again later.
                 </p>
+
             </div>
+
         `;
 
         return;
@@ -326,6 +359,7 @@ function displayExams(exams) {
                 </a>
 
             </div>
+
         `;
 
 
@@ -347,12 +381,15 @@ async function loadStudentResults() {
         const studentData =
             localStorage.getItem("oesStudent");
 
+
         if (!studentData) {
             return;
         }
 
+
         const student =
             JSON.parse(studentData);
+
 
         if (!student.id) {
 
@@ -429,6 +466,7 @@ function displayResults(results) {
     if (results.length === 0) {
 
         resultContainer.innerHTML = `
+
             <div class="empty-state">
 
                 <div class="empty-icon">
@@ -444,6 +482,7 @@ function displayResults(results) {
                 </p>
 
             </div>
+
         `;
 
         return;
@@ -607,6 +646,7 @@ function updateStatistics(results) {
 
         let percentageTotal = 0;
 
+
         results.forEach(function (result) {
 
             percentageTotal +=
@@ -638,6 +678,7 @@ function setText(id, value) {
     const element =
         document.getElementById(id);
 
+
     if (element) {
         element.textContent = value;
     }
@@ -656,6 +697,7 @@ function showExamMessage(message) {
         document.getElementById("examList") ||
         document.querySelector(".exam-grid") ||
         document.querySelector(".exams-grid");
+
 
     if (!examContainer) {
         return;
@@ -691,6 +733,7 @@ function escapeHTML(value) {
         return "";
     }
 
+
     return String(value)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -706,5 +749,5 @@ function escapeHTML(value) {
 // ==========================================
 
 console.log(
-    "OES Dashboard Backend Connected"
+    "OES Dashboard Connected to LIVE Render Backend"
 );

@@ -1,6 +1,15 @@
 /* ========================================
    OES - Subject & Question Management
+   Connected to LIVE Render Backend
 ======================================== */
+
+
+/* ========================================
+   API URL
+======================================== */
+
+const API_URL =
+    "https://oes-nx6c.onrender.com/api";
 
 
 /* ========================================
@@ -38,40 +47,351 @@ const subjectList =
 const subjectMessage =
     document.getElementById("subjectMessage");
 
-const noSubjects =
-    document.getElementById("noSubjects");
+const emptySubjects =
+    document.getElementById("emptySubjects");
+
+const questionExamSelect =
+    document.getElementById("questionExamSelect");
+
+const examSelectionMessage =
+    document.getElementById("examSelectionMessage");
 
 
 /* ========================================
-   LOAD SUBJECTS
+   DATA
 ======================================== */
+
+let exams = [];
+
+let selectedExamId = null;
 
 let subjects = [];
 
-try {
 
-    const savedSubjects =
-        localStorage.getItem("oesSubjects");
+/* ========================================
+   LOAD LOCAL SUBJECTS
+======================================== */
 
-    if (savedSubjects) {
+function loadLocalSubjects() {
+
+    try {
+
+        const savedSubjects =
+            localStorage.getItem("oesSubjects");
+
+        if (!savedSubjects) {
+
+            subjects = [];
+
+            return;
+        }
+
 
         const parsedSubjects =
             JSON.parse(savedSubjects);
 
+
         if (Array.isArray(parsedSubjects)) {
+
             subjects = parsedSubjects;
+
+        } else {
+
+            subjects = [];
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Error loading subjects:",
+            error
+        );
+
+        subjects = [];
+
+    }
+
+}
+
+
+/* ========================================
+   SAVE LOCAL SUBJECTS
+======================================== */
+
+function saveLocalSubjects() {
+
+    localStorage.setItem(
+        "oesSubjects",
+        JSON.stringify(subjects)
+    );
+
+}
+
+
+/* ========================================
+   LOAD EXAMS FROM BACKEND
+======================================== */
+
+async function loadExams() {
+
+    if (!questionExamSelect) {
+        return;
+    }
+
+
+    questionExamSelect.innerHTML = `
+        <option value="">
+            Loading examinations...
+        </option>
+    `;
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/exams`
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.message ||
+                "Unable to load examinations."
+            );
+
+        }
+
+
+        exams =
+            Array.isArray(data.exams)
+                ? data.exams
+                : [];
+
+
+        displayExamOptions();
+
+
+    } catch (error) {
+
+        console.error(
+            "Error loading examinations:",
+            error
+        );
+
+
+        questionExamSelect.innerHTML = `
+            <option value="">
+                Unable to load examinations
+            </option>
+        `;
+
+
+        showExamSelectionMessage(
+            "Unable to load examinations. Please check the backend connection.",
+            false
+        );
+
+    }
+
+}
+
+
+/* ========================================
+   DISPLAY EXAM OPTIONS
+======================================== */
+
+function displayExamOptions() {
+
+    if (!questionExamSelect) {
+        return;
+    }
+
+
+    questionExamSelect.innerHTML = "";
+
+
+    if (exams.length === 0) {
+
+        questionExamSelect.innerHTML = `
+            <option value="">
+                No examinations available
+            </option>
+        `;
+
+
+        selectedExamId = null;
+
+
+        displaySubjects();
+
+
+        return;
+    }
+
+
+    const defaultOption =
+        document.createElement("option");
+
+
+    defaultOption.value = "";
+
+    defaultOption.textContent =
+        "Select an examination";
+
+
+    questionExamSelect.appendChild(
+        defaultOption
+    );
+
+
+    exams.forEach(function (exam) {
+
+        const option =
+            document.createElement("option");
+
+
+        option.value =
+            exam.id;
+
+
+        option.textContent =
+            `${exam.name} (${exam.category || "General"})`;
+
+
+        questionExamSelect.appendChild(
+            option
+        );
+
+    });
+
+
+    /* ========================================
+       RESTORE PREVIOUS EXAM
+    ======================================== */
+
+    const savedExamId =
+        localStorage.getItem(
+            "oesSelectedExamId"
+        );
+
+
+    if (savedExamId) {
+
+        const exists =
+            exams.some(function (exam) {
+
+                return Number(exam.id) ===
+                    Number(savedExamId);
+
+            });
+
+
+        if (exists) {
+
+            questionExamSelect.value =
+                savedExamId;
+
+            selectedExamId =
+                Number(savedExamId);
+
         }
 
     }
 
-} catch (error) {
 
-    console.error(
-        "Error loading subjects:",
-        error
+    displaySubjects();
+
+}
+
+
+/* ========================================
+   EXAM SELECTION
+======================================== */
+
+if (questionExamSelect) {
+
+    questionExamSelect.addEventListener(
+        "change",
+        function () {
+
+            const value =
+                questionExamSelect.value;
+
+
+            if (!value) {
+
+                selectedExamId = null;
+
+
+                localStorage.removeItem(
+                    "oesSelectedExamId"
+                );
+
+
+                displaySubjects();
+
+                return;
+            }
+
+
+            selectedExamId =
+                Number(value);
+
+
+            localStorage.setItem(
+                "oesSelectedExamId",
+                String(selectedExamId)
+            );
+
+
+            showExamSelectionMessage(
+                "Examination selected successfully.",
+                true
+            );
+
+
+            displaySubjects();
+
+        }
     );
 
-    subjects = [];
+}
+
+
+/* ========================================
+   GET SUBJECTS FOR SELECTED EXAM
+======================================== */
+
+function getSubjectsForSelectedExam() {
+
+    if (!selectedExamId) {
+
+        return [];
+
+    }
+
+
+    return subjects.filter(
+        function (subject) {
+
+            return (
+                subject &&
+                Number(subject.examId) ===
+                    Number(selectedExamId)
+            );
+
+        }
+    );
 
 }
 
@@ -86,158 +406,243 @@ function displaySubjects() {
         return;
     }
 
+
     subjectList.innerHTML = "";
 
 
-    /* No Subjects */
+    /* ========================================
+       NO EXAM SELECTED
+    ======================================== */
 
-    if (subjects.length === 0) {
+    if (!selectedExamId) {
 
-        if (noSubjects) {
-            noSubjects.style.display = "block";
+        if (emptySubjects) {
+
+            emptySubjects.style.display =
+                "block";
+
+
+            emptySubjects.innerHTML = `
+
+                <div class="empty-icon">
+                    📝
+                </div>
+
+
+                <h3>
+                    Select an Examination
+                </h3>
+
+
+                <p>
+                    Please select an examination above
+                    to view or create subjects.
+                </p>
+
+            `;
+
         }
+
 
         return;
     }
 
 
-    if (noSubjects) {
-        noSubjects.style.display = "none";
-    }
+    /* ========================================
+       FILTER SUBJECTS
+    ======================================== */
+
+    const examSubjects =
+        getSubjectsForSelectedExam();
 
 
-    /* Display Subjects */
+    /* ========================================
+       NO SUBJECTS
+    ======================================== */
 
-    subjects.forEach(function (subject, index) {
+    if (examSubjects.length === 0) {
 
-        const subjectCard =
-            document.createElement("div");
+        if (emptySubjects) {
 
-        subjectCard.className =
-            "exam-card";
-
-
-        /* Question Count */
-
-        let questionCount = 0;
-
-        if (
-            subject &&
-            Array.isArray(subject.questions)
-        ) {
-            questionCount =
-                subject.questions.length;
-        }
+            emptySubjects.style.display =
+                "block";
 
 
-        /* Subject Name */
+            emptySubjects.innerHTML = `
 
-        const safeSubjectName =
-            subject.name || "Unnamed Subject";
-
-
-        subjectCard.innerHTML = `
-
-            <div class="exam-card-top">
-
-                <div class="exam-small-icon">
+                <div class="empty-icon">
                     📁
                 </div>
 
-                <span class="exam-status">
-                    SUBJECT
-                </span>
 
-            </div>
-
-
-            <h3>
-                ${safeSubjectName}
-            </h3>
+                <h3>
+                    No Subjects Created
+                </h3>
 
 
-            <p class="exam-category">
-                Question Bank
-            </p>
+                <p>
+                    Create your first subject
+                    for this examination.
+                </p>
+
+            `;
+
+        }
 
 
-            <div class="exam-details">
+        return;
+    }
 
-                <div>
 
-                    <span>
-                        Questions
+    if (emptySubjects) {
+
+        emptySubjects.style.display =
+            "none";
+
+    }
+
+
+    /* ========================================
+       DISPLAY SUBJECTS
+    ======================================== */
+
+    examSubjects.forEach(
+        function (subject) {
+
+            const subjectCard =
+                document.createElement("div");
+
+
+            subjectCard.className =
+                "exam-card";
+
+
+            /* Question Count */
+
+            const questionCount =
+                Number(
+                    subject.questionCount || 0
+                );
+
+
+            /* Subject Name */
+
+            const safeSubjectName =
+                escapeHTML(
+                    subject.name ||
+                    "Unnamed Subject"
+                );
+
+
+            subjectCard.innerHTML = `
+
+                <div class="exam-card-top">
+
+                    <div class="exam-small-icon">
+                        📁
+                    </div>
+
+
+                    <span class="exam-status">
+                        SUBJECT
                     </span>
-
-                    <strong>
-                        ${questionCount}
-                    </strong>
 
                 </div>
 
 
-                <div>
+                <h3>
+                    ${safeSubjectName}
+                </h3>
 
-                    <span>
-                        Type
-                    </span>
 
-                    <strong>
-                        MCQ
-                    </strong>
+                <p class="exam-category">
+                    Question Bank
+                </p>
+
+
+                <div class="exam-details">
+
+                    <div>
+
+                        <span>
+                            Questions
+                        </span>
+
+
+                        <strong>
+                            ${questionCount}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Type
+                        </span>
+
+
+                        <strong>
+                            MCQ
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Status
+                        </span>
+
+
+                        <strong>
+                            ACTIVE
+                        </strong>
+
+                    </div>
 
                 </div>
 
 
-                <div>
-
-                    <span>
-                        Status
-                    </span>
-
-                    <strong>
-                        ACTIVE
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-            <div
-                style="
-                    display:flex;
-                    gap:10px;
-                    margin-top:20px;
-                "
-            >
-
-                <button
-                    type="button"
-                    class="btn btn-primary"
-                    style="flex:1;"
-                    onclick="openSubject(${index})"
+                <div
+                    style="
+                        display:flex;
+                        gap:10px;
+                        margin-top:20px;
+                    "
                 >
-                    Open Subject
-                </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        style="flex:1;"
+                        onclick="openSubject(${subject.id})"
+                    >
+                        Open Subject
+                    </button>
 
 
-                <button
-                    type="button"
-                    class="btn btn-secondary"
-                    onclick="deleteSubject(${index})"
-                >
-                    Delete
-                </button>
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        onclick="deleteSubject(${subject.id})"
+                    >
+                        Delete
+                    </button>
 
-            </div>
+                </div>
 
-        `;
+            `;
 
 
-        subjectList.appendChild(subjectCard);
+            subjectList.appendChild(
+                subjectCard
+            );
 
-    });
+        }
+    );
 
 }
 
@@ -255,6 +660,26 @@ if (subjectForm) {
             event.preventDefault();
 
 
+            /* ========================================
+               CHECK EXAM
+            ======================================== */
+
+            if (!selectedExamId) {
+
+                showMessage(
+                    "Please select an examination first.",
+                    false
+                );
+
+                return;
+
+            }
+
+
+            /* ========================================
+               CHECK NAME
+            ======================================== */
+
             if (!subjectName) {
                 return;
             }
@@ -264,8 +689,6 @@ if (subjectForm) {
                 subjectName.value.trim();
 
 
-            /* Validation */
-
             if (!name) {
 
                 showMessage(
@@ -274,10 +697,14 @@ if (subjectForm) {
                 );
 
                 return;
+
             }
 
 
-            /* Duplicate Check */
+            /* ========================================
+               DUPLICATE CHECK
+               Only inside selected exam
+            ======================================== */
 
             const duplicate =
                 subjects.some(
@@ -285,6 +712,8 @@ if (subjectForm) {
 
                         return (
                             subject &&
+                            Number(subject.examId) ===
+                                Number(selectedExamId) &&
                             subject.name &&
                             subject.name
                                 .toLowerCase()
@@ -298,52 +727,59 @@ if (subjectForm) {
             if (duplicate) {
 
                 showMessage(
-                    "This subject already exists.",
+                    "This subject already exists in this examination.",
                     false
                 );
 
                 return;
+
             }
 
 
-            /* Create Subject */
+            /* ========================================
+               CREATE SUBJECT
+            ======================================== */
 
             const newSubject = {
 
                 id: Date.now(),
 
+                examId:
+                    Number(selectedExamId),
+
                 name: name,
+
+                questionCount: 0,
 
                 questions: []
 
             };
 
 
-            subjects.push(newSubject);
-
-
-            /* Save */
-
-            localStorage.setItem(
-                "oesSubjects",
-                JSON.stringify(subjects)
+            subjects.push(
+                newSubject
             );
 
 
-            /* Clear Form */
+            saveLocalSubjects();
+
+
+            /* ========================================
+               RESET
+            ======================================== */
 
             subjectForm.reset();
 
 
-            /* Success Message */
+            /* ========================================
+               SUCCESS
+            ======================================== */
 
             showMessage(
                 "Subject created successfully!",
                 true
             );
 
-
-            /* Refresh */
 
             displaySubjects();
 
@@ -357,26 +793,41 @@ if (subjectForm) {
    OPEN SUBJECT
 ======================================== */
 
-function openSubject(index) {
-
-    if (
-        index < 0 ||
-        index >= subjects.length
-    ) {
-        return;
-    }
-
+function openSubject(subjectId) {
 
     const subject =
-        subjects[index];
+        subjects.find(
+            function (item) {
+
+                return Number(item.id) ===
+                    Number(subjectId);
+
+            }
+        );
 
 
     if (!subject) {
+
         return;
+
     }
 
 
-    /* Save selected subject */
+    if (!selectedExamId) {
+
+        showMessage(
+            "Please select an examination first.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    /* ========================================
+       SAVE SELECTED SUBJECT
+    ======================================== */
 
     localStorage.setItem(
         "oesSelectedSubject",
@@ -384,7 +835,19 @@ function openSubject(index) {
     );
 
 
-    /* Open subject question page */
+    /* ========================================
+       SAVE SELECTED EXAM
+    ======================================== */
+
+    localStorage.setItem(
+        "oesSelectedExamId",
+        String(selectedExamId)
+    );
+
+
+    /* ========================================
+       OPEN QUESTION PAGE
+    ======================================== */
 
     window.location.href =
         "subject-questions.html";
@@ -396,18 +859,17 @@ function openSubject(index) {
    DELETE SUBJECT
 ======================================== */
 
-function deleteSubject(index) {
-
-    if (
-        index < 0 ||
-        index >= subjects.length
-    ) {
-        return;
-    }
-
+function deleteSubject(subjectId) {
 
     const subject =
-        subjects[index];
+        subjects.find(
+            function (item) {
+
+                return Number(item.id) ===
+                    Number(subjectId);
+
+            }
+        );
 
 
     if (!subject) {
@@ -415,13 +877,14 @@ function deleteSubject(index) {
     }
 
 
-    const subjectName =
-        subject.name || "this subject";
+    const subjectTitle =
+        subject.name ||
+        "this subject";
 
 
     const confirmation =
         confirm(
-            `Are you sure you want to delete "${subjectName}" and all its questions?`
+            `Are you sure you want to delete "${subjectTitle}" from this examination?`
         );
 
 
@@ -430,20 +893,23 @@ function deleteSubject(index) {
     }
 
 
-    /* Remove Subject */
+    /* ========================================
+       REMOVE SUBJECT
+    ======================================== */
 
-    subjects.splice(index, 1);
+    subjects =
+        subjects.filter(
+            function (item) {
+
+                return Number(item.id) !==
+                    Number(subjectId);
+
+            }
+        );
 
 
-    /* Save Updated List */
+    saveLocalSubjects();
 
-    localStorage.setItem(
-        "oesSubjects",
-        JSON.stringify(subjects)
-    );
-
-
-    /* Refresh */
 
     displaySubjects();
 
@@ -457,7 +923,7 @@ function deleteSubject(index) {
 
 
 /* ========================================
-   SHOW MESSAGE
+   SHOW SUBJECT MESSAGE
 ======================================== */
 
 function showMessage(
@@ -511,10 +977,99 @@ function showMessage(
 
 
 /* ========================================
+   SHOW EXAM MESSAGE
+======================================== */
+
+function showExamSelectionMessage(
+    text,
+    success
+) {
+
+    if (!examSelectionMessage) {
+        return;
+    }
+
+
+    examSelectionMessage.style.display =
+        "block";
+
+
+    if (success) {
+
+        examSelectionMessage.style.background =
+            "#e8f8f1";
+
+        examSelectionMessage.style.color =
+            "#059669";
+
+    } else {
+
+        examSelectionMessage.style.background =
+            "#fff0f0";
+
+        examSelectionMessage.style.color =
+            "#d93025";
+
+    }
+
+
+    examSelectionMessage.textContent =
+        text;
+
+
+    setTimeout(
+        function () {
+
+            examSelectionMessage.style.display =
+                "none";
+
+        },
+        2500
+    );
+
+}
+
+
+/* ========================================
+   ESCAPE HTML
+======================================== */
+
+function escapeHTML(value) {
+
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* ========================================
    INITIALIZE
 ======================================== */
 
-displaySubjects();
+loadLocalSubjects();
+
+loadExams();
 
 
 /* ========================================
@@ -522,6 +1077,5 @@ displaySubjects();
 ======================================== */
 
 console.log(
-    "OES Subjects:",
-    subjects
+    "OES Question Management connected to LIVE Render Backend"
 );

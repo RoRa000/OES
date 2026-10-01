@@ -1,9 +1,15 @@
 /* ========================================
    OES - Dynamic Exam Result
-   IMPORTANT:
-   Review Answers uses the EXACT shuffled
-   question order saved during submission.
+   LIVE BACKEND RESULT SYSTEM
 ======================================== */
+
+
+/* ========================================
+   API
+======================================== */
+
+const API_URL =
+    "https://oes-nx6c.onrender.com/api";
 
 
 /* ========================================
@@ -29,35 +35,22 @@ if (
 
 
 /* ========================================
-   GET RESULT
+   CURRENT STUDENT
+======================================== */
+
+const currentStudent =
+    JSON.parse(
+        localStorage.getItem(
+            "oesCurrentStudent"
+        ) || "null"
+    );
+
+
+/* ========================================
+   RESULT
 ======================================== */
 
 let resultData = null;
-
-
-try {
-
-    const savedResult =
-        localStorage.getItem(
-            "oesLatestResult"
-        );
-
-
-    if (savedResult) {
-
-        resultData =
-            JSON.parse(savedResult);
-
-    }
-
-} catch (error) {
-
-    console.error(
-        "Error reading result:",
-        error
-    );
-
-}
 
 
 /* ========================================
@@ -69,132 +62,110 @@ const resultStatus =
         "resultStatus"
     );
 
-
 const resultExamName =
     document.getElementById(
         "resultExamName"
     );
-
 
 const marksObtained =
     document.getElementById(
         "marksObtained"
     );
 
-
 const scoreTotal =
     document.getElementById(
         "scoreTotal"
     );
-
 
 const totalQuestionsElement =
     document.getElementById(
         "totalQuestions"
     );
 
-
 const attemptedQuestions =
     document.getElementById(
         "attemptedQuestions"
     );
-
 
 const correctAnswers =
     document.getElementById(
         "correctAnswers"
     );
 
-
 const wrongAnswers =
     document.getElementById(
         "wrongAnswers"
     );
-
 
 const percentage =
     document.getElementById(
         "percentage"
     );
 
-
 const percentageCenter =
     document.getElementById(
         "percentageCenter"
     );
-
 
 const chartCorrect =
     document.getElementById(
         "chartCorrect"
     );
 
-
 const chartWrong =
     document.getElementById(
         "chartWrong"
     );
-
 
 const chartSkipped =
     document.getElementById(
         "chartSkipped"
     );
 
-
 const tableTotal =
     document.getElementById(
         "tableTotal"
     );
-
 
 const tableAttempted =
     document.getElementById(
         "tableAttempted"
     );
 
-
 const tableCorrect =
     document.getElementById(
         "tableCorrect"
     );
-
 
 const tableWrong =
     document.getElementById(
         "tableWrong"
     );
 
-
 const tableSkipped =
     document.getElementById(
         "tableSkipped"
     );
-
 
 const tablePercentage =
     document.getElementById(
         "tablePercentage"
     );
 
-
 const tableStatus =
     document.getElementById(
         "tableStatus"
     );
-
 
 const reviewBtn =
     document.getElementById(
         "reviewBtn"
     );
 
-
 const answerReview =
     document.getElementById(
         "answerReview"
     );
-
 
 const reviewContainer =
     document.getElementById(
@@ -210,16 +181,262 @@ let reviewQuestions = [];
 
 
 /* ========================================
-   IMPORTANT:
-   DO NOT LOAD QUESTIONS FROM OES SUBJECTS
-   FIRST.
+   LOAD RESULT
+======================================== */
 
-   The exact shuffled questions that the
-   student actually received are stored
-   inside resultData.questions.
+async function loadResult() {
 
-   That array has the SAME order as
-   resultData.answers.
+    try {
+
+        console.log(
+            "OES Result: Loading latest result..."
+        );
+
+
+        /*
+           Backend result endpoint:
+
+           GET /api/results/student/:userId
+        */
+
+        if (
+            currentStudent &&
+            currentStudent.id
+        ) {
+
+            const response =
+                await fetch(
+                    `${API_URL}/results/student/${currentStudent.id}`
+                );
+
+
+            if (response.ok) {
+
+                const data =
+                    await response.json();
+
+
+                console.log(
+                    "OES Backend Results:",
+                    data
+                );
+
+
+                let results =
+                    data.results ||
+                    data.data ||
+                    data;
+
+
+                if (
+                    Array.isArray(results) &&
+                    results.length > 0
+                ) {
+
+                    /*
+                       Latest result first
+                    */
+
+                    results =
+                        [...results].sort(
+                            function (a, b) {
+
+                                return (
+                                    new Date(
+                                        b.submitted_at ||
+                                        b.submittedAt ||
+                                        0
+                                    ) -
+                                    new Date(
+                                        a.submitted_at ||
+                                        a.submittedAt ||
+                                        0
+                                    )
+                                );
+
+                            }
+                        );
+
+
+                    const latestBackendResult =
+                        results[0];
+
+
+                    /*
+                       Convert backend result
+                       to frontend format
+                    */
+
+                    resultData = {
+
+                        id:
+                            latestBackendResult.id,
+
+                        studentId:
+                            latestBackendResult.user_id ||
+                            latestBackendResult.studentId,
+
+                        examId:
+                            latestBackendResult.exam_id ||
+                            latestBackendResult.examId,
+
+                        examName:
+                            latestBackendResult.exam_name ||
+                            latestBackendResult.examName ||
+                            "Examination",
+
+                        totalQuestions:
+                            Number(
+                                latestBackendResult.total_questions ??
+                                latestBackendResult.totalQuestions
+                            ) || 0,
+
+                        attempted:
+                            Number(
+                                latestBackendResult.attempted
+                            ) || 0,
+
+                        correct:
+                            Number(
+                                latestBackendResult.correct
+                            ) || 0,
+
+                        wrong:
+                            Number(
+                                latestBackendResult.wrong
+                            ) || 0,
+
+                        marks:
+                            Number(
+                                latestBackendResult.marks
+                            ) || 0,
+
+                        percentage:
+                            Number(
+                                latestBackendResult.percentage
+                            ) || 0,
+
+                        submittedAt:
+                            latestBackendResult.submitted_at ||
+                            latestBackendResult.submittedAt ||
+                            null,
+
+                        answers:
+                            latestBackendResult.answers ||
+                            [],
+
+                        questions:
+                            latestBackendResult.questions ||
+                            []
+
+                    };
+
+
+                    /*
+                       Save latest result locally
+                       for compatibility
+                    */
+
+                    localStorage.setItem(
+                        "oesLatestResult",
+                        JSON.stringify(
+                            resultData
+                        )
+                    );
+
+
+                } else {
+
+                    loadLocalResult();
+
+                }
+
+
+            } else {
+
+                console.warn(
+                    "Backend result request failed."
+                );
+
+                loadLocalResult();
+
+            }
+
+
+        } else {
+
+            loadLocalResult();
+
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "Error loading result:",
+            error
+        );
+
+
+        /*
+           Local fallback
+        */
+
+        loadLocalResult();
+
+    }
+
+
+    displayResult();
+
+
+    console.log(
+        "OES Final Result:",
+        resultData
+    );
+
+}
+
+
+/* ========================================
+   LOCAL RESULT FALLBACK
+======================================== */
+
+function loadLocalResult() {
+
+    try {
+
+        const savedResult =
+            localStorage.getItem(
+                "oesLatestResult"
+            );
+
+
+        if (savedResult) {
+
+            resultData =
+                JSON.parse(
+                    savedResult
+                );
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Error reading local result:",
+            error
+        );
+
+        resultData = null;
+
+    }
+
+}
+
+
+/* ========================================
+   BUILD REVIEW QUESTIONS
 ======================================== */
 
 function buildReviewQuestions() {
@@ -227,10 +444,9 @@ function buildReviewQuestions() {
     reviewQuestions = [];
 
 
-    /* ------------------------------------
-       FIRST PRIORITY:
-       Exact question snapshot from exam
-    ------------------------------------ */
+    /*
+       Exact shuffled snapshot
+    */
 
     if (
         resultData &&
@@ -291,20 +507,8 @@ function buildReviewQuestions() {
     }
 
 
-    /* ------------------------------------
-       OLD RESULT SUPPORT
-
-       Agar result purana hai aur usme
-       questions snapshot nahi hai, to
-       review unavailable rahega.
-
-       IMPORTANT:
-       Hum yaha questions ko rebuild karke
-       wrong order nahi dikhayenge.
-    ------------------------------------ */
-
     console.warn(
-        "Exact shuffled question snapshot is not available for this result."
+        "Exact shuffled question snapshot is not available."
     );
 
 }
@@ -404,10 +608,6 @@ function displayResult() {
 
     }
 
-
-    /* ------------------------------------
-       RESULT DATA
-    ------------------------------------ */
 
     const total =
         Number(
@@ -566,7 +766,7 @@ function displayResult() {
 
 
     /* ========================================
-       CHART
+       CHART DATA
     ======================================== */
 
     if (chartCorrect) {
@@ -670,15 +870,10 @@ function displayResult() {
 
 
     /* ========================================
-       BUILD EXACT SHUFFLED QUESTIONS
+       ANSWER REVIEW
     ======================================== */
 
     buildReviewQuestions();
-
-
-    /* ========================================
-       CREATE ANSWER REVIEW
-    ======================================== */
 
     createAnswerReview();
 
@@ -841,10 +1036,6 @@ function createAnswerReview() {
     reviewContainer.innerHTML = "";
 
 
-    /* ------------------------------------
-       If exact question snapshot missing
-    ------------------------------------ */
-
     if (
         !Array.isArray(
             reviewQuestions
@@ -865,11 +1056,8 @@ function createAnswerReview() {
                 </h3>
 
                 <p>
-                    This result was created before
-                    the shuffled question order was
-                    saved. Please take the examination
-                    again to get the correct shuffled
-                    question order in review.
+                    The exact question snapshot is
+                    not available for this result.
                 </p>
 
             </div>
@@ -881,15 +1069,21 @@ function createAnswerReview() {
     }
 
 
-    /* ========================================
-       IMPORTANT:
+    /*
+       Backend result_answers may not contain
+       the full answer array in older results.
 
-       reviewQuestions[index]
-       matches
-       resultData.answers[index]
+       If answers are missing, review cannot
+       safely match answers to questions.
+    */
 
-       EXACT SAME ORDER.
-    ======================================== */
+    const answers =
+        Array.isArray(
+            resultData.answers
+        )
+            ? resultData.answers
+            : [];
+
 
     reviewQuestions.forEach(
         function (
@@ -898,9 +1092,7 @@ function createAnswerReview() {
         ) {
 
             const studentAnswer =
-                resultData.answers[
-                    index
-                ];
+                answers[index];
 
 
             const correctAnswer =
@@ -912,10 +1104,6 @@ function createAnswerReview() {
             let answerText =
                 "Not Attempted";
 
-
-            /* --------------------------------
-               STUDENT ANSWER
-            -------------------------------- */
 
             if (
                 studentAnswer !== null &&
@@ -932,10 +1120,6 @@ function createAnswerReview() {
 
             }
 
-
-            /* --------------------------------
-               CORRECT ANSWER
-            -------------------------------- */
 
             let correctText =
                 "Not Available";
@@ -954,10 +1138,6 @@ function createAnswerReview() {
 
             }
 
-
-            /* --------------------------------
-               STATUS
-            -------------------------------- */
 
             let statusText =
                 "Not Attempted";
@@ -986,10 +1166,6 @@ function createAnswerReview() {
 
             }
 
-
-            /* =================================
-               REVIEW CARD
-            ================================= */
 
             const reviewCard =
                 document.createElement(
@@ -1154,20 +1330,4 @@ if (reviewBtn) {
    INITIALIZE
 ======================================== */
 
-displayResult();
-
-
-/* ========================================
-   DEBUG
-======================================== */
-
-console.log(
-    "OES Result:",
-    resultData
-);
-
-
-console.log(
-    "OES Exact Shuffled Review Questions:",
-    reviewQuestions
-);
+loadResult();

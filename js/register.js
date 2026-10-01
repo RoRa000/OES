@@ -3,7 +3,8 @@
    Backend Connected
 ======================================== */
 
-const API_URL = "http://localhost:3000/api";
+// LIVE RENDER BACKEND
+const API_URL = "https://oes-nx6c.onrender.com/api";
 
 const registerForm = document.getElementById("registerForm");
 
@@ -89,7 +90,7 @@ if (registerForm) {
         try {
 
             // ========================================
-            // SEND DATA TO BACKEND
+            // SEND DATA TO LIVE BACKEND
             // ========================================
 
             const response = await fetch(
@@ -150,7 +151,7 @@ if (registerForm) {
             );
 
             showRegisterMessage(
-                "Cannot connect to backend. Please make sure the OES server is running.",
+                "Cannot connect to backend. Please try again.",
                 false
             );
 

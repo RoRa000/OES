@@ -1,7 +1,15 @@
 /* ========================================
    OES - Exam Management
-   Exam → Subjects → Questions
+   Connected to LIVE Render Backend
 ======================================== */
+
+
+/* ========================================
+   API URL
+======================================== */
+
+const API_URL =
+    "https://oes-nx6c.onrender.com/api";
 
 
 /* ========================================
@@ -44,75 +52,15 @@ const examSubjects =
 
 
 /* ========================================
-   DEFAULT EXAM
-======================================== */
-
-const defaultExam = {
-    id: 1,
-    name: "General Aptitude Test",
-
-    subjects: [],
-
-    questions: 5,
-    duration: 10,
-    negativeMark: 0.25,
-
-    status: "ACTIVE"
-};
-
-
-/* ========================================
-   LOAD EXAMS
+   EXAMS
 ======================================== */
 
 let exams = [];
 
-try {
-
-    const savedExams =
-        localStorage.getItem("oesExams");
-
-    if (savedExams) {
-
-        const parsedExams =
-            JSON.parse(savedExams);
-
-        if (Array.isArray(parsedExams)) {
-            exams = parsedExams;
-        }
-
-    }
-
-} catch (error) {
-
-    console.error(
-        "Error loading exams:",
-        error
-    );
-
-    exams = [];
-
-}
-
 
 /* ========================================
-   CREATE DEFAULT EXAM
-======================================== */
-
-if (exams.length === 0) {
-
-    exams = [defaultExam];
-
-    localStorage.setItem(
-        "oesExams",
-        JSON.stringify(exams)
-    );
-
-}
-
-
-/* ========================================
-   LOAD SUBJECTS
+   SUBJECTS
+   Kept from existing frontend system
 ======================================== */
 
 let subjects = [];
@@ -141,6 +89,168 @@ try {
     );
 
     subjects = [];
+
+}
+
+
+/* ========================================
+   LOAD EXAMS FROM BACKEND
+======================================== */
+
+async function loadExams() {
+
+    if (examList) {
+
+        examList.innerHTML = `
+            <div class="empty-results">
+                <div class="empty-icon">
+                    ⏳
+                </div>
+
+                <h3>
+                    Loading Examinations...
+                </h3>
+
+                <p>
+                    Please wait.
+                </p>
+            </div>
+        `;
+
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/exams`
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.message ||
+                "Unable to load examinations."
+            );
+
+        }
+
+
+        exams =
+            Array.isArray(data.exams)
+                ? data.exams
+                : [];
+
+
+        /* Load question counts */
+
+        await loadQuestionCounts();
+
+
+        displayExams();
+
+
+        console.log(
+            "OES Exams loaded from LIVE Backend:",
+            exams
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Error loading exams:",
+            error
+        );
+
+
+        exams = [];
+
+
+        if (examList) {
+
+            examList.innerHTML = `
+                <div class="empty-results">
+
+                    <div class="empty-icon">
+                        ⚠️
+                    </div>
+
+                    <h3>
+                        Unable to Load Examinations
+                    </h3>
+
+                    <p>
+                        Please check your backend connection.
+                    </p>
+
+                </div>
+            `;
+
+        }
+
+    }
+
+}
+
+
+/* ========================================
+   LOAD QUESTION COUNTS
+======================================== */
+
+async function loadQuestionCounts() {
+
+    for (
+        const exam of exams
+    ) {
+
+        try {
+
+            const response =
+                await fetch(
+                    `${API_URL}/questions/exam/${exam.id}`
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                response.ok &&
+                data.success &&
+                Array.isArray(data.questions)
+            ) {
+
+                exam.questionCount =
+                    data.questions.length;
+
+            } else {
+
+                exam.questionCount = 0;
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                `Error loading questions for exam ${exam.id}:`,
+                error
+            );
+
+            exam.questionCount = 0;
+
+        }
+
+    }
 
 }
 
@@ -178,8 +288,12 @@ function displaySubjectOptions() {
 
                 <br>
 
-                Please create subjects first
-                from Question Management.
+                You can still create an examination.
+
+                <br>
+
+                Subjects can be added through
+                Question Management.
 
             </div>
 
@@ -193,7 +307,10 @@ function displaySubjectOptions() {
 
     subjects.forEach(function (subject) {
 
-        if (!subject || !subject.name) {
+        if (
+            !subject ||
+            !subject.name
+        ) {
             return;
         }
 
@@ -226,7 +343,7 @@ function displaySubjectOptions() {
                 type="checkbox"
                 class="exam-subject-checkbox"
                 value="${subject.id}"
-                data-name="${subject.name}"
+                data-name="${escapeHTML(subject.name)}"
                 style="
                     width: 18px;
                     height: 18px;
@@ -237,7 +354,7 @@ function displaySubjectOptions() {
             <span>
 
                 <strong>
-                    ${subject.name}
+                    ${escapeHTML(subject.name)}
                 </strong>
 
                 <small
@@ -281,9 +398,12 @@ function getSelectedSubjects() {
 
         selectedSubjects.push({
 
-            id: Number(checkbox.value),
+            id: Number(
+                checkbox.value
+            ),
 
-            name: checkbox.dataset.name
+            name:
+                checkbox.dataset.name
 
         });
 
@@ -310,7 +430,10 @@ function displayExams() {
 
 
     if (examCount) {
-        examCount.textContent = exams.length;
+
+        examCount.textContent =
+            exams.length;
+
     }
 
 
@@ -345,69 +468,50 @@ function displayExams() {
 
     /* Display Exams */
 
-    exams.forEach(function (exam, index) {
+    exams.forEach(function (exam) {
 
         const examCard =
             document.createElement("div");
+
 
         examCard.className =
             "exam-card";
 
 
-        /* Support old exams */
-
-        let selectedSubjects = [];
-
-
-        if (Array.isArray(exam.subjects)) {
-
-            selectedSubjects =
-                exam.subjects;
-
-        }
+        const questionCount =
+            Number(
+                exam.questionCount || 0
+            );
 
 
-        let subjectHTML = "";
+        const visible =
+            Number(
+                exam.is_visible
+            ) === 1;
 
 
-        if (selectedSubjects.length > 0) {
+        const status =
+            exam.status ||
+            "ACTIVE";
 
-            subjectHTML =
-                selectedSubjects
-                    .map(function (subject) {
 
-                        return `
-                            <span
-                                style="
-                                    display: inline-block;
-                                    padding: 5px 10px;
-                                    margin: 3px;
-                                    background: #eef4ff;
-                                    border-radius: 20px;
-                                    font-size: 13px;
-                                "
-                            >
-                                ${subject.name}
-                            </span>
-                        `;
+        let category =
+            exam.category ||
+            "General";
 
-                    })
-                    .join("");
 
-        } else {
+        if (
+            Array.isArray(exam.subjects) &&
+            exam.subjects.length > 0
+        ) {
 
-            subjectHTML = `
-
-                <span
-                    style="
-                        color: #888;
-                        font-size: 13px;
-                    "
-                >
-                    No subjects selected
-                </span>
-
-            `;
+            category =
+                exam.subjects
+                    .map(
+                        subject =>
+                            subject.name
+                    )
+                    .join(", ");
 
         }
 
@@ -421,29 +525,48 @@ function displayExams() {
                 </div>
 
                 <span class="exam-status">
-                    ${exam.status || "ACTIVE"}
+                    ${escapeHTML(status)}
                 </span>
 
             </div>
 
 
             <h3>
-                ${exam.name}
+                ${escapeHTML(exam.name)}
             </h3>
 
 
             <p class="exam-category">
-                Subjects
+
+                Category:
+                ${escapeHTML(category)}
+
             </p>
 
 
             <div
                 style="
                     margin: 10px 0 15px;
+                    padding: 10px;
+                    border-radius: 8px;
+                    background: ${
+                        visible
+                            ? "#eaf8ef"
+                            : "#fff7ed"
+                    };
+                    color: ${
+                        visible
+                            ? "#16803c"
+                            : "#c2410c"
+                    };
                 "
             >
 
-                ${subjectHTML}
+                ${
+                    visible
+                        ? "🟢 Visible to Students"
+                        : "🔴 Hidden from Students"
+                }
 
             </div>
 
@@ -457,7 +580,7 @@ function displayExams() {
                     </span>
 
                     <strong>
-                        ${exam.questions}
+                        ${questionCount}
                     </strong>
 
                 </div>
@@ -483,7 +606,7 @@ function displayExams() {
                     </span>
 
                     <strong>
-                        ${exam.negativeMark}
+                        ${exam.negative_mark ?? 0}
                     </strong>
 
                 </div>
@@ -491,19 +614,48 @@ function displayExams() {
             </div>
 
 
-            <button
-                type="button"
-                class="btn btn-primary"
-                onclick="deleteExam(${index})"
-                style="margin-top: 20px;"
+            <div
+                style="
+                    display: flex;
+                    gap: 10px;
+                    flex-wrap: wrap;
+                    margin-top: 20px;
+                "
             >
-                Delete Examination
-            </button>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="toggleExamVisibility(${exam.id}, ${visible})"
+                >
+
+                    ${
+                        visible
+                            ? "Hide from Students"
+                            : "Show to Students"
+                    }
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="deleteExam(${exam.id})"
+                >
+
+                    Delete Examination
+
+                </button>
+
+            </div>
 
         `;
 
 
-        examList.appendChild(examCard);
+        examList.appendChild(
+            examCard
+        );
 
     });
 
@@ -518,7 +670,7 @@ if (examForm) {
 
     examForm.addEventListener(
         "submit",
-        function (event) {
+        async function (event) {
 
             event.preventDefault();
 
@@ -543,7 +695,9 @@ if (examForm) {
             const questions =
                 Number(
                     document
-                        .getElementById("examQuestions")
+                        .getElementById(
+                            "examQuestions"
+                        )
                         .value
                 );
 
@@ -553,7 +707,9 @@ if (examForm) {
             const duration =
                 Number(
                     document
-                        .getElementById("examDuration")
+                        .getElementById(
+                            "examDuration"
+                        )
                         .value
                 );
 
@@ -563,7 +719,9 @@ if (examForm) {
             const negativeMark =
                 Number(
                     document
-                        .getElementById("negativeMark")
+                        .getElementById(
+                            "negativeMark"
+                        )
                         .value
                 );
 
@@ -580,17 +738,7 @@ if (examForm) {
                 );
 
                 return;
-            }
 
-
-            if (selectedSubjects.length === 0) {
-
-                showMessage(
-                    "Please select at least one subject.",
-                    false
-                );
-
-                return;
             }
 
 
@@ -606,133 +754,172 @@ if (examForm) {
                 );
 
                 return;
+
             }
 
 
             /* ========================================
-               CHECK QUESTION AVAILABILITY
+               CATEGORY
             ======================================== */
 
-            let totalAvailableQuestions = 0;
-
-
-            selectedSubjects.forEach(
-                function (selectedSubject) {
-
-                    const fullSubject =
-                        subjects.find(
-                            function (subject) {
-
-                                return (
-                                    Number(subject.id)
-                                    ===
-                                    Number(selectedSubject.id)
-                                );
-
-                            }
-                        );
-
-
-                    if (
-                        fullSubject &&
-                        Array.isArray(fullSubject.questions)
-                    ) {
-
-                        totalAvailableQuestions +=
-                            fullSubject.questions.length;
-
-                    }
-
-                }
-            );
+            let category =
+                "General";
 
 
             if (
-                questions >
-                totalAvailableQuestions
+                selectedSubjects.length > 0
             ) {
 
-                showMessage(
+                category =
+                    selectedSubjects
+                        .map(
+                            subject =>
+                                subject.name
+                        )
+                        .join(", ");
 
-                    `Only ${totalAvailableQuestions} question(s) are available in the selected subjects.`,
-
-                    false
-
-                );
-
-                return;
             }
 
 
             /* ========================================
-               CREATE NEW EXAM
+               CREATE EXAM DATA
             ======================================== */
 
-            const newExam = {
-
-                id: Date.now(),
+            const examData = {
 
                 name: name,
 
-                subjects: selectedSubjects,
-
-                questions: questions,
+                category: category,
 
                 duration: duration,
 
-                negativeMark: negativeMark,
+                negative_mark:
+                    negativeMark,
 
-                status: "ACTIVE"
+                status: "ACTIVE",
+
+                is_visible: 0
 
             };
 
 
-            exams.push(newExam);
-
-
             /* ========================================
-               SAVE EXAM
+               SEND TO BACKEND
             ======================================== */
 
-            localStorage.setItem(
-                "oesExams",
-                JSON.stringify(exams)
-            );
+            try {
+
+                showMessage(
+                    "Creating examination...",
+                    true
+                );
 
 
-            /* ========================================
-               SUCCESS
-            ======================================== */
+                const response =
+                    await fetch(
+                        `${API_URL}/exams`,
+                        {
+                            method: "POST",
 
-            showMessage(
-                "Examination created successfully!",
-                true
-            );
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
 
+                            body:
+                                JSON.stringify(
+                                    examData
+                                )
 
-            /* Reset Form */
-
-            examForm.reset();
-
-
-            document.getElementById(
-                "examQuestions"
-            ).value = 5;
-
-
-            document.getElementById(
-                "examDuration"
-            ).value = 10;
+                        }
+                    );
 
 
-            document.getElementById(
-                "negativeMark"
-            ).value = 0.25;
+                const data =
+                    await response.json();
 
 
-            /* Refresh */
+                if (
+                    !response.ok ||
+                    !data.success
+                ) {
 
-            displayExams();
+                    throw new Error(
+                        data.message ||
+                        "Failed to create examination."
+                    );
+
+                }
+
+
+                /* ========================================
+                   SUCCESS
+                ======================================== */
+
+                showMessage(
+                    "Examination created successfully!",
+                    true
+                );
+
+
+                /* Reset Form */
+
+                examForm.reset();
+
+
+                const questionInput =
+                    document.getElementById(
+                        "examQuestions"
+                    );
+
+
+                const durationInput =
+                    document.getElementById(
+                        "examDuration"
+                    );
+
+
+                const negativeInput =
+                    document.getElementById(
+                        "negativeMark"
+                    );
+
+
+                if (questionInput) {
+                    questionInput.value = 5;
+                }
+
+
+                if (durationInput) {
+                    durationInput.value = 10;
+                }
+
+
+                if (negativeInput) {
+                    negativeInput.value = 0.25;
+                }
+
+
+                /* Reload Backend Exams */
+
+                await loadExams();
+
+
+            } catch (error) {
+
+                console.error(
+                    "Create exam error:",
+                    error
+                );
+
+
+                showMessage(
+                    error.message ||
+                    "Unable to create examination.",
+                    false
+                );
+
+            }
 
         }
     );
@@ -741,21 +928,106 @@ if (examForm) {
 
 
 /* ========================================
+   TOGGLE EXAM VISIBILITY
+======================================== */
+
+async function toggleExamVisibility(
+    examId,
+    currentlyVisible
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/exams/${examId}/visibility`,
+                {
+                    method: "PATCH",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        is_visible:
+                            currentlyVisible
+                                ? 0
+                                : 1
+
+                    })
+
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.message ||
+                "Unable to update exam visibility."
+            );
+
+        }
+
+
+        showMessage(
+            currentlyVisible
+                ? "Examination hidden from students."
+                : "Examination is now visible to students.",
+            true
+        );
+
+
+        await loadExams();
+
+
+    } catch (error) {
+
+        console.error(
+            "Visibility update error:",
+            error
+        );
+
+
+        showMessage(
+            "Unable to update examination visibility.",
+            false
+        );
+
+    }
+
+}
+
+
+/* ========================================
    DELETE EXAM
 ======================================== */
 
-function deleteExam(index) {
-
-    if (
-        index < 0 ||
-        index >= exams.length
-    ) {
-        return;
-    }
-
+async function deleteExam(
+    examId
+) {
 
     const exam =
-        exams[index];
+        exams.find(function (item) {
+
+            return Number(item.id) ===
+                Number(examId);
+
+        });
+
+
+    if (!exam) {
+        return;
+    }
 
 
     const confirmation =
@@ -769,22 +1041,58 @@ function deleteExam(index) {
     }
 
 
-    exams.splice(index, 1);
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/exams/${examId}`,
+                {
+                    method: "DELETE"
+                }
+            );
 
 
-    localStorage.setItem(
-        "oesExams",
-        JSON.stringify(exams)
-    );
+        const data =
+            await response.json();
 
 
-    displayExams();
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.message ||
+                "Unable to delete examination."
+            );
+
+        }
 
 
-    showMessage(
-        "Examination deleted successfully.",
-        true
-    );
+        showMessage(
+            "Examination deleted successfully.",
+            true
+        );
+
+
+        await loadExams();
+
+
+    } catch (error) {
+
+        console.error(
+            "Delete exam error:",
+            error
+        );
+
+
+        showMessage(
+            error.message ||
+            "Unable to delete examination.",
+            false
+        );
+
+    }
 
 }
 
@@ -841,12 +1149,45 @@ function showMessage(
 
 
 /* ========================================
+   ESCAPE HTML
+======================================== */
+
+function escapeHTML(value) {
+
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* ========================================
    INITIALIZE
 ======================================== */
 
 displaySubjectOptions();
 
-displayExams();
+loadExams();
 
 
 /* ========================================
@@ -854,11 +1195,5 @@ displayExams();
 ======================================== */
 
 console.log(
-    "OES Exams:",
-    exams
-);
-
-console.log(
-    "OES Subjects:",
-    subjects
+    "OES Exam Management connected to LIVE Render Backend"
 );

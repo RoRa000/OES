@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 
@@ -10,8 +12,6 @@ const resultRoutes = require("./routes/results");
 
 const app = express();
 
-// Render provides PORT automatically.
-// Local computer par 3000 use hoga.
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
@@ -29,22 +29,25 @@ app.get("/", (req, res) => {
     });
 });
 
-app.get("/api/test", (req, res) => {
-    db.get("SELECT 1 AS test", (err, row) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: "Database connection failed",
-                error: err.message
-            });
-        }
+app.get("/api/test", async (req, res) => {
+    try {
+        const result = await db.query("SELECT 1 AS test");
 
         res.json({
             success: true,
             message: "Backend and database are connected!",
-            database: row.test === 1
+            database: result.rows[0].test === 1
         });
-    });
+
+    } catch (error) {
+        console.error("Database test error:", error.message);
+
+        res.status(500).json({
+            success: false,
+            message: "Database connection failed",
+            error: error.message
+        });
+    }
 });
 
 app.listen(PORT, () => {

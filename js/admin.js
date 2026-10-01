@@ -1,6 +1,15 @@
 /* ========================================
    OES - Admin Dashboard
+   Connected to LIVE Render Backend
 ======================================== */
+
+
+/* ========================================
+   API URL
+======================================== */
+
+const API_URL =
+    "https://oes-nx6c.onrender.com/api";
 
 
 /* ========================================
@@ -54,15 +63,189 @@ const totalResultsElement =
    Load Dashboard Statistics
 ======================================== */
 
-function loadDashboardStatistics() {
+async function loadDashboardStatistics() {
+
+    console.log(
+        "OES Admin Dashboard connected to LIVE Render Backend"
+    );
+
+
+    /* ========================================
+       TOTAL EXAMS
+    ======================================== */
+
+    try {
+
+        const examsResponse =
+            await fetch(
+                `${API_URL}/exams`
+            );
+
+
+        const examsData =
+            await examsResponse.json();
+
+
+        if (
+            examsData.success &&
+            Array.isArray(examsData.exams)
+        ) {
+
+            if (totalExamsElement) {
+
+                totalExamsElement.textContent =
+                    examsData.exams.length;
+
+            }
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Error loading exams:",
+            error
+        );
+
+    }
+
+
+    /* ========================================
+       TOTAL QUESTIONS
+    ======================================== */
+
+    try {
+
+        const examsResponse =
+            await fetch(
+                `${API_URL}/exams`
+            );
+
+
+        const examsData =
+            await examsResponse.json();
+
+
+        let totalQuestions = 0;
+
+
+        if (
+            examsData.success &&
+            Array.isArray(examsData.exams)
+        ) {
+
+            for (
+                const exam of examsData.exams
+            ) {
+
+                try {
+
+                    const questionsResponse =
+                        await fetch(
+                            `${API_URL}/questions/exam/${exam.id}`
+                        );
+
+
+                    const questionsData =
+                        await questionsResponse.json();
+
+
+                    if (
+                        questionsData.success &&
+                        Array.isArray(
+                            questionsData.questions
+                        )
+                    ) {
+
+                        totalQuestions +=
+                            questionsData.questions.length;
+
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        `Error loading questions for exam ${exam.id}:`,
+                        error
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        if (totalQuestionsElement) {
+
+            totalQuestionsElement.textContent =
+                totalQuestions;
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Error loading questions:",
+            error
+        );
+
+    }
+
+
+    /* ========================================
+       TOTAL RESULTS
+    ======================================== */
+
+    try {
+
+        const resultsResponse =
+            await fetch(
+                `${API_URL}/results`
+            );
+
+
+        const resultsData =
+            await resultsResponse.json();
+
+
+        if (
+            resultsData.success &&
+            Array.isArray(resultsData.results)
+        ) {
+
+            if (totalResultsElement) {
+
+                totalResultsElement.textContent =
+                    resultsData.results.length;
+
+            }
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Error loading results:",
+            error
+        );
+
+    }
 
 
     /* ========================================
        TOTAL STUDENTS
-       Read ALL registered students
+       
+       Temporary:
+       Backend mein abhi users GET API
+       nahi banayi hai.
+       
+       Isliye existing localStorage data
+       fallback ke liye use kar rahe hain.
     ======================================== */
 
     let totalStudents = 0;
+
 
     const studentsData =
         localStorage.getItem(
@@ -106,182 +289,6 @@ function loadDashboardStatistics() {
 
     }
 
-
-
-    /* ========================================
-       TOTAL EXAMS
-    ======================================== */
-
-    const examsData =
-        localStorage.getItem(
-            "oesExams"
-        );
-
-
-    let totalExams = 1;
-
-
-    if (examsData) {
-
-        try {
-
-            const exams =
-                JSON.parse(
-                    examsData
-                );
-
-
-            if (Array.isArray(exams)) {
-
-                totalExams =
-                    exams.length;
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                "Error loading exams:",
-                error
-            );
-
-        }
-
-    }
-
-
-    if (totalExamsElement) {
-
-        totalExamsElement.textContent =
-            totalExams;
-
-    }
-
-
-
-    /* ========================================
-       TOTAL QUESTIONS
-    ======================================== */
-
-    const questionsData =
-        localStorage.getItem(
-            "oesQuestions"
-        );
-
-
-    let totalQuestions = 5;
-
-
-    if (questionsData) {
-
-        try {
-
-            const questions =
-                JSON.parse(
-                    questionsData
-                );
-
-
-            if (Array.isArray(questions)) {
-
-                totalQuestions =
-                    questions.length;
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                "Error loading questions:",
-                error
-            );
-
-        }
-
-    }
-
-
-    if (totalQuestionsElement) {
-
-        totalQuestionsElement.textContent =
-            totalQuestions;
-
-    }
-
-
-
-    /* ========================================
-       TOTAL RESULTS
-    ======================================== */
-
-    let totalResults = 0;
-
-
-    const resultsData =
-        localStorage.getItem(
-            "oesResults"
-        );
-
-
-    if (resultsData) {
-
-        try {
-
-            const results =
-                JSON.parse(
-                    resultsData
-                );
-
-
-            if (Array.isArray(results)) {
-
-                totalResults =
-                    results.length;
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                "Error loading results:",
-                error
-            );
-
-        }
-
-    }
-
-
-
-    /* ========================================
-       Fallback to Latest Result
-    ======================================== */
-
-    if (
-        totalResults === 0
-    ) {
-
-        const latestResult =
-            localStorage.getItem(
-                "oesLatestResult"
-            );
-
-
-        if (latestResult) {
-
-            totalResults = 1;
-
-        }
-
-    }
-
-
-    if (totalResultsElement) {
-
-        totalResultsElement.textContent =
-            totalResults;
-
-    }
 
 }
 

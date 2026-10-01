@@ -1,9 +1,10 @@
 /* ========================================
    OES - Student Login System
-   Backend Connected
+   Live Render Backend Connected
 ======================================== */
 
-const API_URL = "http://localhost:3000/api";
+// LIVE RENDER BACKEND
+const API_URL = "https://oes-nx6c.onrender.com/api";
 
 const loginForm = document.getElementById("loginForm");
 
@@ -13,17 +14,17 @@ if (loginForm) {
 
         event.preventDefault();
 
-        const email = document
-            .getElementById("loginEmail")
-            .value
-            .trim()
-            .toLowerCase();
-
-        const password = document
-            .getElementById("loginPassword")
-            .value;
-
+        const emailInput = document.getElementById("loginEmail");
+        const passwordInput = document.getElementById("loginPassword");
         const message = document.getElementById("loginMessage");
+
+        const email = emailInput
+            ? emailInput.value.trim().toLowerCase()
+            : "";
+
+        const password = passwordInput
+            ? passwordInput.value
+            : "";
 
         if (message) {
             message.style.display = "none";
@@ -68,7 +69,7 @@ if (loginForm) {
         try {
 
             // ========================================
-            // SEND LOGIN REQUEST TO BACKEND
+            // SEND LOGIN REQUEST
             // ========================================
 
             const response = await fetch(
@@ -145,13 +146,17 @@ if (loginForm) {
             );
 
             // ========================================
-            // REDIRECT
+            // SUCCESS MESSAGE
             // ========================================
 
             showLoginMessage(
                 "Login successful! Redirecting...",
                 true
             );
+
+            // ========================================
+            // REDIRECT
+            // ========================================
 
             setTimeout(function () {
                 window.location.href = "dashboard.html";
@@ -165,7 +170,7 @@ if (loginForm) {
             );
 
             showLoginMessage(
-                "Cannot connect to backend. Please make sure the OES server is running.",
+                "Cannot connect to backend. Please try again.",
                 false
             );
 
@@ -208,6 +213,5 @@ function showLoginMessage(text, success) {
 
         message.style.background = "#fff0f0";
         message.style.color = "#d93025";
-
     }
 }

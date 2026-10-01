@@ -1,7 +1,15 @@
 /* ========================================
    OES - Subject Questions Management
-   PDF AUTO QUESTION IMPORT VERSION
+   LIVE BACKEND + PDF AUTO IMPORT
 ======================================== */
+
+
+/* ========================================
+   API
+======================================== */
+
+const API_URL =
+    "https://oes-nx6c.onrender.com/api";
 
 
 /* ========================================
@@ -26,10 +34,18 @@ if (
    GET SELECTED SUBJECT
 ======================================== */
 
-let selectedSubject =
-    JSON.parse(
+let selectedSubject = null;
+
+try {
+    selectedSubject = JSON.parse(
         localStorage.getItem("oesSelectedSubject") || "null"
     );
+} catch (error) {
+    console.error(
+        "Selected subject error:",
+        error
+    );
+}
 
 if (!selectedSubject) {
 
@@ -41,47 +57,20 @@ if (!selectedSubject) {
 
 
 /* ========================================
-   LOAD SUBJECTS
+   GET SELECTED EXAM
 ======================================== */
 
-let subjects =
-    JSON.parse(
-        localStorage.getItem("oesSubjects") || "[]"
+const selectedExamId =
+    Number(
+        localStorage.getItem("oesSelectedExamId")
     );
 
-if (!Array.isArray(subjects)) {
-    subjects = [];
-}
+if (!selectedExamId) {
 
-
-let subjectIndex =
-    subjects.findIndex(function (subject) {
-
-        return (
-            String(subject.id) ===
-            String(selectedSubject.id)
-        );
-
-    });
-
-
-if (subjectIndex === -1) {
-
-    alert("Subject not found.");
+    alert("No examination selected.");
 
     window.location.href =
         "questions.html";
-}
-
-
-let currentSubject =
-    subjects[subjectIndex];
-
-
-if (!Array.isArray(currentSubject.questions)) {
-
-    currentSubject.questions = [];
-
 }
 
 
@@ -99,58 +88,90 @@ const subjectDescription =
 /* Manual Question */
 
 const questionForm =
-    document.getElementById("subjectQuestionForm");
+    document.getElementById(
+        "subjectQuestionForm"
+    );
 
 const questionText =
-    document.getElementById("subjectQuestionText");
+    document.getElementById(
+        "subjectQuestionText"
+    );
 
 const option1 =
-    document.getElementById("subjectOption1");
+    document.getElementById(
+        "subjectOption1"
+    );
 
 const option2 =
-    document.getElementById("subjectOption2");
+    document.getElementById(
+        "subjectOption2"
+    );
 
 const option3 =
-    document.getElementById("subjectOption3");
+    document.getElementById(
+        "subjectOption3"
+    );
 
 const option4 =
-    document.getElementById("subjectOption4");
+    document.getElementById(
+        "subjectOption4"
+    );
 
 const correctAnswer =
-    document.getElementById("subjectCorrectAnswer");
+    document.getElementById(
+        "subjectCorrectAnswer"
+    );
 
 const questionMessage =
-    document.getElementById("subjectQuestionMessage");
+    document.getElementById(
+        "subjectQuestionMessage"
+    );
 
 
 /* Question List */
 
 const questionList =
-    document.getElementById("subjectQuestionList");
+    document.getElementById(
+        "subjectQuestionList"
+    );
 
 const noQuestions =
-    document.getElementById("noSubjectQuestions");
+    document.getElementById(
+        "noSubjectQuestions"
+    );
 
 
 /* PDF */
 
 const questionPdfFile =
-    document.getElementById("questionPdfFile");
+    document.getElementById(
+        "questionPdfFile"
+    );
 
 const readPdfBtn =
-    document.getElementById("readPdfBtn");
+    document.getElementById(
+        "readPdfBtn"
+    );
 
 const pdfMessage =
-    document.getElementById("pdfMessage");
+    document.getElementById(
+        "pdfMessage"
+    );
 
 const pdfPreviewSection =
-    document.getElementById("pdfPreviewSection");
+    document.getElementById(
+        "pdfPreviewSection"
+    );
 
 const pdfQuestionCount =
-    document.getElementById("pdfQuestionCount");
+    document.getElementById(
+        "pdfQuestionCount"
+    );
 
 const pdfQuestionPreview =
-    document.getElementById("pdfQuestionPreview");
+    document.getElementById(
+        "pdfQuestionPreview"
+    );
 
 const importSelectedPdfQuestionsBtn =
     document.getElementById(
@@ -158,14 +179,16 @@ const importSelectedPdfQuestionsBtn =
     );
 
 const pdfImportMessage =
-    document.getElementById("pdfImportMessage");
+    document.getElementById(
+        "pdfImportMessage"
+    );
 
 
 /* ========================================
-   TEMP PDF QUESTIONS
+   QUESTIONS FROM BACKEND
 ======================================== */
 
-let detectedPdfQuestions = [];
+let backendQuestions = [];
 
 
 /* ========================================
@@ -175,40 +198,111 @@ let detectedPdfQuestions = [];
 if (subjectTitle) {
 
     subjectTitle.textContent =
-        currentSubject.name;
-
+        selectedSubject.name;
 }
-
 
 if (subjectDescription) {
 
     subjectDescription.textContent =
-        `Manage unlimited questions for ${currentSubject.name}.`;
-
+        `Manage unlimited questions for ${selectedSubject.name}.`;
 }
 
 
 /* ========================================
-   SAVE SUBJECT
+   LOAD QUESTIONS FROM BACKEND
 ======================================== */
 
-function saveSubject() {
+async function loadQuestions() {
 
-    subjects[subjectIndex] =
-        currentSubject;
+    if (!selectedExamId) {
+        return;
+    }
 
+    if (!questionList) {
+        return;
+    }
 
-    localStorage.setItem(
-        "oesSubjects",
-        JSON.stringify(subjects)
-    );
+    questionList.innerHTML = `
+        <div
+            style="
+                text-align:center;
+                padding:30px;
+            "
+        >
+            Loading questions...
+        </div>
+    `;
 
+    try {
 
-    localStorage.setItem(
-        "oesSelectedSubject",
-        JSON.stringify(currentSubject)
-    );
+        const response =
+            await fetch(
+                `${API_URL}/questions/exam/${selectedExamId}`
+            );
 
+        const data =
+            await response.json();
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.message ||
+                "Unable to load questions."
+            );
+        }
+
+        const allQuestions =
+            Array.isArray(data.questions)
+                ? data.questions
+                : [];
+
+        backendQuestions =
+            allQuestions.filter(
+                function (question) {
+
+                    return (
+                        question.subject &&
+                        question.subject
+                            .toLowerCase()
+                            ===
+                        selectedSubject.name
+                            .toLowerCase()
+                    );
+                }
+            );
+
+        displayQuestions();
+
+        console.log(
+            "OES Backend Questions:",
+            backendQuestions
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Load questions error:",
+            error
+        );
+
+        questionList.innerHTML = `
+            <div
+                style="
+                    padding:20px;
+                    background:#fff0f0;
+                    color:#d93025;
+                    border-radius:10px;
+                "
+            >
+                Unable to load questions from backend.
+                Please check your internet connection
+                and backend.
+            </div>
+        `;
+    }
 }
 
 
@@ -222,63 +316,52 @@ function displayQuestions() {
         return;
     }
 
-
     questionList.innerHTML = "";
 
-
-    const questions =
-        currentSubject.questions;
-
-
     if (
-        !Array.isArray(questions) ||
-        questions.length === 0
+        !Array.isArray(backendQuestions) ||
+        backendQuestions.length === 0
     ) {
 
         if (noQuestions) {
-
             noQuestions.style.display =
                 "block";
-
         }
 
         return;
-
     }
-
 
     if (noQuestions) {
-
         noQuestions.style.display =
             "none";
-
     }
 
-
-    questions.forEach(
+    backendQuestions.forEach(
         function (question, index) {
 
             const card =
                 document.createElement("div");
 
-
             card.className =
                 "exam-card";
 
+            const options = [
+                question.option_a || "",
+                question.option_b || "",
+                question.option_c || "",
+                question.option_d || ""
+            ];
 
-            const options =
-                Array.isArray(question.options)
-                    ? question.options
-                    : ["", "", "", ""];
-
+            const correctIndex =
+                Number(
+                    question.correct_answer
+                );
 
             const correctText =
-                options[question.correctAnswer]
-                    || "Not available";
-
+                options[correctIndex] ||
+                "Not available";
 
             card.innerHTML = `
-
                 <div class="exam-card-top">
 
                     <div class="exam-small-icon">
@@ -291,37 +374,54 @@ function displayQuestions() {
 
                 </div>
 
-
                 <h3>
-                    ${escapeHtml(question.question)}
+                    ${escapeHtml(
+                        question.question
+                    )}
                 </h3>
 
-
                 <p class="exam-category">
-                    ${escapeHtml(currentSubject.name)}
+                    ${escapeHtml(
+                        selectedSubject.name
+                    )}
                 </p>
 
-
-                <div style="margin-top:15px;">
+                <div
+                    style="
+                        margin-top:15px;
+                        line-height:1.8;
+                    "
+                >
 
                     <div>
-                        1. ${escapeHtml(options[0])}
+                        1.
+                        ${escapeHtml(
+                            options[0]
+                        )}
                     </div>
 
                     <div>
-                        2. ${escapeHtml(options[1])}
+                        2.
+                        ${escapeHtml(
+                            options[1]
+                        )}
                     </div>
 
                     <div>
-                        3. ${escapeHtml(options[2])}
+                        3.
+                        ${escapeHtml(
+                            options[2]
+                        )}
                     </div>
 
                     <div>
-                        4. ${escapeHtml(options[3])}
+                        4.
+                        ${escapeHtml(
+                            options[3]
+                        )}
                     </div>
 
                 </div>
-
 
                 <div
                     style="
@@ -334,10 +434,11 @@ function displayQuestions() {
                 >
 
                     Correct Answer:
-                    ${escapeHtml(correctText)}
+                    ${escapeHtml(
+                        correctText
+                    )}
 
                 </div>
-
 
                 <button
                     type="button"
@@ -346,19 +447,15 @@ function displayQuestions() {
                         width:100%;
                         margin-top:15px;
                     "
-                    onclick="deleteQuestion(${index})"
+                    onclick="deleteQuestion(${question.id})"
                 >
                     🗑️ Delete Question
                 </button>
-
             `;
 
-
             questionList.appendChild(card);
-
         }
     );
-
 }
 
 
@@ -370,14 +467,12 @@ if (questionForm) {
 
     questionForm.addEventListener(
         "submit",
-        function (event) {
+        async function (event) {
 
             event.preventDefault();
 
-
             const question =
                 questionText.value.trim();
-
 
             const options = [
 
@@ -391,16 +486,18 @@ if (questionForm) {
 
             ];
 
-
             const answer =
-                Number(correctAnswer.value);
-
+                Number(
+                    correctAnswer.value
+                );
 
             if (
                 !question ||
-                options.some(function (o) {
-                    return !o;
-                }) ||
+                options.some(
+                    function (option) {
+                        return !option;
+                    }
+                ) ||
                 correctAnswer.value === ""
             ) {
 
@@ -410,41 +507,126 @@ if (questionForm) {
                 );
 
                 return;
-
             }
 
 
-            currentSubject.questions.push({
+            /* Disable button */
 
-                id: Date.now(),
+            const submitButton =
+                questionForm.querySelector(
+                    'button[type="submit"]'
+                );
 
-                question: question,
-
-                options: options,
-
-                correctAnswer: answer
-
-            });
-
-
-            saveSubject();
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent =
+                    "Adding Question...";
+            }
 
 
-            questionForm.reset();
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/questions`,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+
+                                exam_id:
+                                    selectedExamId,
+
+                                subject:
+                                    selectedSubject.name,
+
+                                question:
+                                    question,
+
+                                option_a:
+                                    options[0],
+
+                                option_b:
+                                    options[1],
+
+                                option_c:
+                                    options[2],
+
+                                option_d:
+                                    options[3],
+
+                                correct_answer:
+                                    answer,
+
+                                marks: 1
+
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (
+                    !response.ok ||
+                    !data.success
+                ) {
+
+                    throw new Error(
+                        data.message ||
+                        "Unable to add question."
+                    );
+                }
 
 
-            displayQuestions();
+                questionForm.reset();
 
+                showQuestionMessage(
+                    "Question added successfully!",
+                    true
+                );
 
-            showQuestionMessage(
-                "Question added successfully!",
-                true
-            );
+                await loadQuestions();
 
+            } catch (error) {
+
+                console.error(
+                    "Add question error:",
+                    error
+                );
+
+                showQuestionMessage(
+                    error.message ||
+                    "Unable to add question.",
+                    false
+                );
+
+            } finally {
+
+                if (submitButton) {
+
+                    submitButton.disabled =
+                        false;
+
+                    submitButton.textContent =
+                        "+ Add Question";
+                }
+            }
         }
     );
-
 }
+
+
+/* ========================================
+   TEMP PDF QUESTIONS
+======================================== */
+
+let detectedPdfQuestions = [];
 
 
 /* ========================================
@@ -469,7 +651,6 @@ if (readPdfBtn) {
                 );
 
                 return;
-
             }
 
 
@@ -479,7 +660,9 @@ if (readPdfBtn) {
 
             if (
                 file.type !== "application/pdf" &&
-                !file.name.toLowerCase().endsWith(".pdf")
+                !file.name
+                    .toLowerCase()
+                    .endsWith(".pdf")
             ) {
 
                 showPdfMessage(
@@ -488,7 +671,6 @@ if (readPdfBtn) {
                 );
 
                 return;
-
             }
 
 
@@ -498,7 +680,8 @@ if (readPdfBtn) {
             );
 
 
-            readPdfBtn.disabled = true;
+            readPdfBtn.disabled =
+                true;
 
 
             try {
@@ -508,7 +691,8 @@ if (readPdfBtn) {
 
 
                 if (
-                    typeof pdfjsLib === "undefined"
+                    typeof pdfjsLib ===
+                    "undefined"
                 ) {
 
                     showPdfMessage(
@@ -516,25 +700,22 @@ if (readPdfBtn) {
                         false
                     );
 
-                    readPdfBtn.disabled = false;
-
                     return;
-
                 }
 
 
                 const pdf =
-                    await pdfjsLib.getDocument({
-                        data: arrayBuffer
-                    }).promise;
+                    await pdfjsLib
+                        .getDocument({
+                            data: arrayBuffer
+                        })
+                        .promise;
 
 
                 let fullText = "";
 
 
-                /* ========================================
-                   READ ALL PAGES
-                ======================================== */
+                /* Read all pages */
 
                 for (
                     let pageNumber = 1;
@@ -543,68 +724,62 @@ if (readPdfBtn) {
                 ) {
 
                     const page =
-                        await pdf.getPage(pageNumber);
-
+                        await pdf.getPage(
+                            pageNumber
+                        );
 
                     const textContent =
                         await page.getTextContent();
 
-
                     const pageText =
                         textContent.items
-                            .map(function (item) {
-                                return item.str;
-                            })
+                            .map(
+                                function (item) {
+                                    return item.str;
+                                }
+                            )
                             .join(" ");
-
 
                     fullText +=
                         "\n" +
                         pageText +
                         "\n";
-
                 }
 
 
-                /* ========================================
-                   CLEAN PDF TEXT
-                ======================================== */
+                /* Clean */
 
                 fullText =
-                    cleanPdfText(fullText);
+                    cleanPdfText(
+                        fullText
+                    );
 
 
-                /* ========================================
-                   DETECT QUESTIONS
-                ======================================== */
+                /* Parse */
 
                 detectedPdfQuestions =
-                    parsePdfQuestions(fullText);
+                    parsePdfQuestions(
+                        fullText
+                    );
 
-
-                /* ========================================
-                   SHOW RESULT
-                ======================================== */
 
                 if (pdfPreviewSection) {
 
                     pdfPreviewSection.style.display =
                         "block";
-
                 }
 
 
                 if (
-                    detectedPdfQuestions.length === 0
+                    detectedPdfQuestions.length ===
+                    0
                 ) {
 
                     if (pdfQuestionCount) {
 
                         pdfQuestionCount.textContent =
                             "Questions Found: 0";
-
                     }
-
 
                     if (pdfQuestionPreview) {
 
@@ -623,7 +798,11 @@ if (readPdfBtn) {
                                     Questions could not be detected automatically.
                                 </strong>
 
-                                <p style="margin-top:8px;">
+                                <p
+                                    style="
+                                        margin-top:8px;
+                                    "
+                                >
                                     Please check that your PDF follows the
                                     Question → A) → B) → C) → D) →
                                     Correct Option format.
@@ -632,14 +811,11 @@ if (readPdfBtn) {
                             </div>
 
                         `;
-
                     }
-
 
                 } else {
 
                     renderPdfQuestions();
-
                 }
 
 
@@ -654,29 +830,25 @@ if (readPdfBtn) {
                     detectedPdfQuestions
                 );
 
-            }
-
-            catch (error) {
+            } catch (error) {
 
                 console.error(
                     "PDF reading error:",
                     error
                 );
 
-
                 showPdfMessage(
                     "Unable to read this PDF. Please try another PDF.",
                     false
                 );
 
+            } finally {
+
+                readPdfBtn.disabled =
+                    false;
             }
-
-
-            readPdfBtn.disabled = false;
-
         }
     );
-
 }
 
 
@@ -690,35 +862,29 @@ function cleanPdfText(text) {
         return "";
     }
 
-
     let cleaned =
-        text.replace(/\u00a0/g, " ");
-
-
-    cleaned =
-        cleaned.replace(/\r/g, "\n");
-
-
-    /*
-     * PDF extraction sometimes produces
-     * strange characters for ₹.
-     */
+        text.replace(
+            /\u00a0/g,
+            " "
+        );
 
     cleaned =
-        cleaned.replace(/\bn\s+(?=\d)/gi, "₹ ");
-
-
-    /*
-     * Fix spaces around colon.
-     */
+        cleaned.replace(
+            /\r/g,
+            "\n"
+        );
 
     cleaned =
-        cleaned.replace(/\s*:\s*/g, ": ");
+        cleaned.replace(
+            /\bn\s+(?=\d)/gi,
+            "₹ "
+        );
 
-
-    /*
-     * Remove page headings.
-     */
+    cleaned =
+        cleaned.replace(
+            /\s*:\s*/g,
+            ": "
+        );
 
     cleaned =
         cleaned.replace(
@@ -726,9 +892,7 @@ function cleanPdfText(text) {
             "\n"
         );
 
-
     return cleaned.trim();
-
 }
 
 
@@ -740,42 +904,34 @@ function parsePdfQuestions(text) {
 
     const questions = [];
 
-
     if (!text) {
         return questions;
     }
 
 
-    /*
-     * Normalize spaces.
-     */
-
     let normalized =
         text
-            .replace(/\s+/g, " ")
+            .replace(
+                /\s+/g,
+                " "
+            )
             .trim();
 
 
-    /*
-     * Find question numbers.
-     *
-     * Example:
-     * 1. Question...
-     * 2. Question...
-     */
+    /* Find question numbers */
 
     const questionRegex =
         /(?:^|\s)(\d+)\.\s+/g;
 
-
     const matches = [];
-
 
     let match;
 
-
     while (
-        (match = questionRegex.exec(normalized)) !== null
+        (match =
+            questionRegex.exec(
+                normalized
+            )) !== null
     ) {
 
         matches.push({
@@ -784,16 +940,13 @@ function parsePdfQuestions(text) {
                 Number(match[1]),
 
             start:
-                match.index + match[0].length
-
+                match.index +
+                match[0].length
         });
-
     }
 
 
-    /*
-     * Build question blocks.
-     */
+    /* Build question blocks */
 
     for (
         let i = 0;
@@ -804,47 +957,43 @@ function parsePdfQuestions(text) {
         const start =
             matches[i].start;
 
-
         const end =
             i + 1 < matches.length
                 ? matches[i + 1].start -
-                  matches[i + 1].number
-                    .toString()
-                    .length -
+                  matches[i + 1]
+                      .number
+                      .toString()
+                      .length -
                   2
                 : normalized.length;
 
 
         let block =
-            normalized.substring(
-                start,
-                end
-            ).trim();
+            normalized
+                .substring(
+                    start,
+                    end
+                )
+                .trim();
 
 
-        /*
-         * Ignore extremely small blocks.
-         */
-
-        if (block.length < 10) {
+        if (
+            block.length < 10
+        ) {
             continue;
         }
 
 
-        /*
-         * Find Correct Option.
-         */
+        /* Correct answer */
 
         const correctMatch =
             block.match(
-                /Correct\s+(?:Option|Answer)\s*:\s*([ABCD])\s*\)?\s*(.*?)(?=\s+\d+\.\s+|$)/i
+                /Correct\s+(?:Option|Answer)\s*:\s*([ABCD])\s*[\.\)]?/i
             );
 
 
         if (!correctMatch) {
-
             continue;
-
         }
 
 
@@ -853,10 +1002,7 @@ function parsePdfQuestions(text) {
                 .toUpperCase();
 
 
-        /*
-         * Remove Correct Option
-         * from question block.
-         */
+        /* Remove correct answer */
 
         block =
             block.substring(
@@ -865,23 +1011,20 @@ function parsePdfQuestions(text) {
             ).trim();
 
 
-        /*
-         * Find options.
-         */
+        /* Find A-D options */
 
         const optionRegex =
-            /(?:^|\s)([ABCD])\)\s*/g;
-
+            /(?:^|\s)([ABCD])[\.\)]\s+/g;
 
         const optionMatches = [];
 
-
         let optionMatch;
-
 
         while (
             (optionMatch =
-                optionRegex.exec(block)) !== null
+                optionRegex.exec(
+                    block
+                )) !== null
         ) {
 
             optionMatches.push({
@@ -893,50 +1036,35 @@ function parsePdfQuestions(text) {
                 start:
                     optionMatch.index +
                     optionMatch[0].length
-
             });
-
         }
 
 
-        /*
-         * Need exactly four options.
-         */
-
-        if (optionMatches.length < 4) {
-
+        if (
+            optionMatches.length < 4
+        ) {
             continue;
-
         }
 
 
-        /*
-         * Question text.
-         */
-
-        const questionStart =
-            0;
-
+        /* Question text */
 
         const questionEnd =
             optionMatches[0].start -
-            optionMatches[0].letter.length -
+            optionMatches[0]
+                .letter
+                .length -
             2;
 
 
         let question =
             block
                 .substring(
-                    questionStart,
+                    0,
                     questionEnd
                 )
                 .trim();
 
-
-        /*
-         * Remove accidental leading
-         * question number.
-         */
 
         question =
             question.replace(
@@ -945,12 +1073,9 @@ function parsePdfQuestions(text) {
             );
 
 
-        /*
-         * Extract A-D.
-         */
+        /* Extract options */
 
         const options = [];
-
 
         for (
             let j = 0;
@@ -961,22 +1086,24 @@ function parsePdfQuestions(text) {
             const optionStart =
                 optionMatches[j].start;
 
-
             let optionEnd;
 
-
-            if (j + 1 < 4) {
+            if (
+                j + 1 < 4
+            ) {
 
                 optionEnd =
-                    optionMatches[j + 1].start -
-                    optionMatches[j + 1].letter.length -
+                    optionMatches[j + 1]
+                        .start -
+                    optionMatches[j + 1]
+                        .letter
+                        .length -
                     2;
 
             } else {
 
                 optionEnd =
                     block.length;
-
             }
 
 
@@ -996,14 +1123,11 @@ function parsePdfQuestions(text) {
                 );
 
 
-            options.push(optionText);
-
+            options.push(
+                optionText
+            );
         }
 
-
-        /*
-         * Correct answer index.
-         */
 
         const correctAnswer =
             "ABCD".indexOf(
@@ -1011,16 +1135,14 @@ function parsePdfQuestions(text) {
             );
 
 
-        /*
-         * Final validation.
-         */
-
         if (
             question &&
             options.length === 4 &&
-            options.every(function (option) {
-                return option.length > 0;
-            }) &&
+            options.every(
+                function (option) {
+                    return option.length > 0;
+                }
+            ) &&
             correctAnswer >= 0
         ) {
 
@@ -1029,7 +1151,8 @@ function parsePdfQuestions(text) {
                 tempId:
                     `pdf_${Date.now()}_${i}`,
 
-                selected: true,
+                selected:
+                    true,
 
                 question:
                     question,
@@ -1039,16 +1162,12 @@ function parsePdfQuestions(text) {
 
                 correctAnswer:
                     correctAnswer
-
             });
-
         }
-
     }
 
 
     return questions;
-
 }
 
 
@@ -1063,24 +1182,23 @@ function renderPdfQuestions() {
     }
 
 
-    pdfQuestionPreview.innerHTML = "";
+    pdfQuestionPreview.innerHTML =
+        "";
 
 
     if (pdfQuestionCount) {
 
         pdfQuestionCount.textContent =
             `Questions Found: ${detectedPdfQuestions.length}`;
-
     }
 
 
-    /*
-     * Select All / Unselect All
-     */
+    /* Select controls */
 
     const controlBox =
-        document.createElement("div");
-
+        document.createElement(
+            "div"
+        );
 
     controlBox.style.cssText = `
         display:flex;
@@ -1120,7 +1238,9 @@ function renderPdfQuestions() {
         function (question, index) {
 
             const card =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
 
             card.style.cssText = `
@@ -1145,7 +1265,11 @@ function renderPdfQuestions() {
                     <input
                         type="checkbox"
                         id="pdfQuestion_${index}"
-                        ${question.selected ? "checked" : ""}
+                        ${
+                            question.selected
+                                ? "checked"
+                                : ""
+                        }
                         style="
                             margin-top:5px;
                             width:18px;
@@ -1160,7 +1284,9 @@ function renderPdfQuestions() {
                         </strong>
 
                         <span>
-                            ${escapeHtml(question.question)}
+                            ${escapeHtml(
+                                question.question
+                            )}
                         </span>
 
                     </div>
@@ -1172,27 +1298,36 @@ function renderPdfQuestions() {
                     style="
                         margin-top:15px;
                         padding-left:30px;
+                        line-height:1.8;
                     "
                 >
 
                     <div>
                         <strong>A)</strong>
-                        ${escapeHtml(question.options[0])}
+                        ${escapeHtml(
+                            question.options[0]
+                        )}
                     </div>
 
                     <div>
                         <strong>B)</strong>
-                        ${escapeHtml(question.options[1])}
+                        ${escapeHtml(
+                            question.options[1]
+                        )}
                     </div>
 
                     <div>
                         <strong>C)</strong>
-                        ${escapeHtml(question.options[2])}
+                        ${escapeHtml(
+                            question.options[2]
+                        )}
                     </div>
 
                     <div>
                         <strong>D)</strong>
-                        ${escapeHtml(question.options[3])}
+                        ${escapeHtml(
+                            question.options[3]
+                        )}
                     </div>
 
                 </div>
@@ -1214,8 +1349,11 @@ function renderPdfQuestions() {
                     </strong>
 
                     ${"ABCD"[question.correctAnswer]})
+
                     ${escapeHtml(
-                        question.options[question.correctAnswer]
+                        question.options[
+                            question.correctAnswer
+                        ]
                     )}
 
                 </div>
@@ -1242,12 +1380,9 @@ function renderPdfQuestions() {
 
                         question.selected =
                             checkbox.checked;
-
                     }
                 );
-
             }
-
         }
     );
 
@@ -1256,7 +1391,6 @@ function renderPdfQuestions() {
         document.getElementById(
             "selectAllPdfQuestions"
         );
-
 
     const unselectAll =
         document.getElementById(
@@ -1272,16 +1406,15 @@ function renderPdfQuestions() {
 
                 detectedPdfQuestions.forEach(
                     function (question) {
-                        question.selected = true;
+
+                        question.selected =
+                            true;
                     }
                 );
 
-
                 renderPdfQuestions();
-
             }
         );
-
     }
 
 
@@ -1293,30 +1426,28 @@ function renderPdfQuestions() {
 
                 detectedPdfQuestions.forEach(
                     function (question) {
-                        question.selected = false;
+
+                        question.selected =
+                            false;
                     }
                 );
 
-
                 renderPdfQuestions();
-
             }
         );
-
     }
-
 }
 
 
 /* ========================================
-   IMPORT SELECTED PDF QUESTIONS
+   IMPORT PDF QUESTIONS TO BACKEND
 ======================================== */
 
 if (importSelectedPdfQuestionsBtn) {
 
     importSelectedPdfQuestionsBtn.addEventListener(
         "click",
-        function () {
+        async function () {
 
             const selectedQuestions =
                 detectedPdfQuestions.filter(
@@ -1336,78 +1467,162 @@ if (importSelectedPdfQuestionsBtn) {
                 );
 
                 return;
-
             }
+
+
+            importSelectedPdfQuestionsBtn.disabled =
+                true;
+
+            importSelectedPdfQuestionsBtn.textContent =
+                "Importing Questions...";
 
 
             let imported = 0;
 
-
-            selectedQuestions.forEach(
-                function (question) {
-
-                    currentSubject.questions.push({
-
-                        id:
-                            Date.now() +
-                            Math.floor(
-                                Math.random() * 100000
-                            ),
-
-                        question:
-                            question.question,
-
-                        options:
-                            question.options,
-
-                        correctAnswer:
-                            question.correctAnswer
-
-                    });
+            let failed = 0;
 
 
-                    imported++;
+            try {
 
-                }
-            );
+                for (
+                    const question
+                    of selectedQuestions
+                ) {
+
+                    try {
+
+                        const response =
+                            await fetch(
+                                `${API_URL}/questions`,
+                                {
+                                    method:
+                                        "POST",
+
+                                    headers: {
+                                        "Content-Type":
+                                            "application/json"
+                                    },
+
+                                    body:
+                                        JSON.stringify({
+
+                                            exam_id:
+                                                selectedExamId,
+
+                                            subject:
+                                                selectedSubject.name,
+
+                                            question:
+                                                question.question,
+
+                                            option_a:
+                                                question.options[0],
+
+                                            option_b:
+                                                question.options[1],
+
+                                            option_c:
+                                                question.options[2],
+
+                                            option_d:
+                                                question.options[3],
+
+                                            correct_answer:
+                                                question.correctAnswer,
+
+                                            marks: 1
+
+                                        })
+                                }
+                            );
 
 
-            saveSubject();
+                        const data =
+                            await response.json();
 
 
-            displayQuestions();
+                        if (
+                            !response.ok ||
+                            !data.success
+                        ) {
+
+                            failed++;
+
+                            console.error(
+                                "PDF question import failed:",
+                                data
+                            );
+
+                            continue;
+                        }
 
 
-            /*
-             * Remove imported questions
-             * from temporary list.
-             */
+                        imported++;
 
-            detectedPdfQuestions =
-                detectedPdfQuestions.filter(
-                    function (question) {
-                        return !question.selected;
+                    } catch (error) {
+
+                        failed++;
+
+                        console.error(
+                            "PDF question import error:",
+                            error
+                        );
                     }
+                }
+
+
+                await loadQuestions();
+
+
+                detectedPdfQuestions =
+                    detectedPdfQuestions.filter(
+                        function (question) {
+                            return !question.selected;
+                        }
+                    );
+
+
+                renderPdfQuestions();
+
+
+                if (failed === 0) {
+
+                    showPdfImportMessage(
+                        `${imported} question(s) imported successfully into ${selectedSubject.name}!`,
+                        true
+                    );
+
+                } else {
+
+                    showPdfImportMessage(
+                        `${imported} question(s) imported, ${failed} question(s) failed.`,
+                        imported > 0
+                    );
+                }
+
+
+            } catch (error) {
+
+                console.error(
+                    "PDF import error:",
+                    error
                 );
 
+                showPdfImportMessage(
+                    "Unable to import PDF questions.",
+                    false
+                );
 
-            renderPdfQuestions();
+            } finally {
 
+                importSelectedPdfQuestionsBtn.disabled =
+                    false;
 
-            showPdfImportMessage(
-                `${imported} question(s) imported successfully into ${currentSubject.name}!`,
-                true
-            );
-
-
-            console.log(
-                "Imported questions:",
-                imported
-            );
-
+                importSelectedPdfQuestionsBtn.textContent =
+                    "Import Selected Questions";
+            }
         }
     );
-
 }
 
 
@@ -1415,12 +1630,11 @@ if (importSelectedPdfQuestionsBtn) {
    DELETE QUESTION
 ======================================== */
 
-function deleteQuestion(index) {
+async function deleteQuestion(
+    questionId
+) {
 
-    if (
-        index < 0 ||
-        index >= currentSubject.questions.length
-    ) {
+    if (!questionId) {
         return;
     }
 
@@ -1436,23 +1650,54 @@ function deleteQuestion(index) {
     }
 
 
-    currentSubject.questions.splice(
-        index,
-        1
-    );
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/questions/${questionId}`,
+                {
+                    method: "DELETE"
+                }
+            );
 
 
-    saveSubject();
+        const data =
+            await response.json();
 
 
-    displayQuestions();
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.message ||
+                "Unable to delete question."
+            );
+        }
 
 
-    showQuestionMessage(
-        "Question deleted successfully!",
-        true
-    );
+        showQuestionMessage(
+            "Question deleted successfully!",
+            true
+        );
 
+
+        await loadQuestions();
+
+    } catch (error) {
+
+        console.error(
+            "Delete question error:",
+            error
+        );
+
+        showQuestionMessage(
+            error.message ||
+            "Unable to delete question.",
+            false
+        );
+    }
 }
 
 
@@ -1499,7 +1744,6 @@ function showQuestionMessage(
         },
         2500
     );
-
 }
 
 
@@ -1535,7 +1779,6 @@ function showPdfMessage(
         success
             ? "#059669"
             : "#d93025";
-
 }
 
 
@@ -1571,7 +1814,6 @@ function showPdfImportMessage(
         success
             ? "#059669"
             : "#d93025";
-
 }
 
 
@@ -1585,19 +1827,36 @@ function escapeHtml(value) {
         value === null ||
         value === undefined
     ) {
-
         return "";
-
     }
 
 
     return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
 
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 }
 
 
@@ -1605,7 +1864,7 @@ function escapeHtml(value) {
    INITIAL LOAD
 ======================================== */
 
-displayQuestions();
+loadQuestions();
 
 
 /* ========================================
@@ -1614,10 +1873,14 @@ displayQuestions();
 
 console.log(
     "OES Current Subject:",
-    currentSubject.name
+    selectedSubject.name
 );
 
 console.log(
-    "OES Existing Questions:",
-    currentSubject.questions.length
+    "OES Selected Exam ID:",
+    selectedExamId
+);
+
+console.log(
+    "OES Subject Questions connected to LIVE Render Backend"
 );

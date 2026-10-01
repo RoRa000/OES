@@ -1,7 +1,9 @@
 /* ========================================
-   OES - Online Examination
-   Dynamic Exam → Subjects → Questions
+   OES - ONLINE EXAMINATION SYSTEM
+   LIVE BACKEND EXAM SYSTEM
 ======================================== */
+
+const API_URL = "https://oes-nx6c.onrender.com/api";
 
 
 /* ========================================
@@ -14,7 +16,6 @@ const userRole =
 const userEmail =
     localStorage.getItem("oesUserEmail");
 
-
 if (
     userRole !== "student" ||
     !userEmail
@@ -24,7 +25,7 @@ if (
 
 
 /* ========================================
-   GET CURRENT STUDENT
+   CURRENT STUDENT
 ======================================== */
 
 const currentStudent =
@@ -34,299 +35,357 @@ const currentStudent =
 
 
 /* ========================================
-   GET SELECTED EXAM
+   GET EXAM ID FROM URL
 ======================================== */
 
-let selectedExam = null;
-
-try {
-
-    const savedSelectedExam =
-        localStorage.getItem("oesSelectedExam");
-
-    if (savedSelectedExam) {
-
-        selectedExam =
-            JSON.parse(savedSelectedExam);
-
-    }
-
-} catch (error) {
-
-    console.error(
-        "Error loading selected exam:",
-        error
+const urlParams =
+    new URLSearchParams(
+        window.location.search
     );
 
-}
+const examId =
+    urlParams.get("examId");
 
 
-/* ========================================
-   LOAD ALL EXAMS
-======================================== */
-
-let allExams = [];
-
-try {
-
-    const savedExams =
-        localStorage.getItem("oesExams");
-
-    if (savedExams) {
-
-        const parsedExams =
-            JSON.parse(savedExams);
-
-        if (Array.isArray(parsedExams)) {
-
-            allExams =
-                parsedExams;
-
-        }
-
-    }
-
-} catch (error) {
-
-    console.error(
-        "Error loading exams:",
-        error
-    );
-
-}
-
-
-/* ========================================
-   FIND SELECTED EXAM
-======================================== */
-
-if (selectedExam && selectedExam.id) {
-
-    const foundExam =
-        allExams.find(function (exam) {
-
-            return String(exam.id) ===
-                String(selectedExam.id);
-
-        });
-
-
-    if (foundExam) {
-
-        selectedExam =
-            foundExam;
-
-    }
-
-}
-
-
-/* ========================================
-   URL FALLBACK
-======================================== */
-
-if (!selectedExam) {
-
-    const urlParams =
-        new URLSearchParams(
-            window.location.search
-        );
-
-
-    const examId =
-        urlParams.get("examId");
-
-
-    if (examId) {
-
-        selectedExam =
-            allExams.find(function (exam) {
-
-                return String(exam.id) ===
-                    String(examId);
-
-            }) || null;
-
-    }
-
-}
-
-
-/* ========================================
-   EXAM NOT FOUND
-======================================== */
-
-if (!selectedExam) {
+if (!examId) {
 
     alert(
-        "No examination selected. Please select an examination from the dashboard."
+        "No examination selected."
     );
-
 
     window.location.href =
         "dashboard.html";
-
 }
 
 
 /* ========================================
-   LOAD SUBJECTS
+   EXAM VARIABLES
 ======================================== */
 
-let allSubjects = [];
-
-try {
-
-    const savedSubjects =
-        localStorage.getItem("oesSubjects");
-
-    if (savedSubjects) {
-
-        const parsedSubjects =
-            JSON.parse(savedSubjects);
-
-        if (Array.isArray(parsedSubjects)) {
-
-            allSubjects =
-                parsedSubjects;
-
-        }
-
-    }
-
-} catch (error) {
-
-    console.error(
-        "Error loading subjects:",
-        error
-    );
-
-}
-
-
-/* ========================================
-   BUILD EXAM QUESTIONS
-======================================== */
-
+let selectedExam = null;
 let questions = [];
 
+let currentQuestionIndex = 0;
 
-/*
-   Selected exam ke subjects ke andar
-   stored questions collect karenge.
-*/
+let userAnswers = [];
 
-if (
-    selectedExam &&
-    Array.isArray(selectedExam.subjects)
-) {
+let timeLeft = 0;
 
-    selectedExam.subjects.forEach(
-        function (selectedSubject) {
+let timerInterval = null;
 
-            const subject =
-                allSubjects.find(
-                    function (item) {
+let examSubmitted = false;
 
-                        return String(item.id) ===
-                            String(selectedSubject.id);
 
-                    }
+/* ========================================
+   HTML ELEMENTS
+======================================== */
+
+const timerElement =
+    document.getElementById("timer");
+
+const currentQuestionElement =
+    document.getElementById(
+        "currentQuestion"
+    );
+
+const totalQuestionsElement =
+    document.getElementById(
+        "totalQuestions"
+    );
+
+const answeredCountElement =
+    document.getElementById(
+        "answeredCount"
+    );
+
+const progressFill =
+    document.getElementById(
+        "progressFill"
+    );
+
+const questionNumberElement =
+    document.getElementById(
+        "questionNumber"
+    );
+
+const questionTextElement =
+    document.getElementById(
+        "questionText"
+    );
+
+const optionsContainer =
+    document.getElementById(
+        "optionsContainer"
+    );
+
+const previousButton =
+    document.getElementById(
+        "previousBtn"
+    );
+
+const nextButton =
+    document.getElementById(
+        "nextBtn"
+    );
+
+const questionPalette =
+    document.getElementById(
+        "questionPalette"
+    );
+
+const submitExamButton =
+    document.getElementById(
+        "submitExamBtn"
+    );
+
+
+/* ========================================
+   START EXAM
+======================================== */
+
+async function startExam() {
+
+    try {
+
+        console.log(
+            "OES: Loading exam from LIVE backend..."
+        );
+
+        const examResponse =
+            await fetch(
+                `${API_URL}/exams/${examId}`
+            );
+
+        if (!examResponse.ok) {
+
+            throw new Error(
+                "Unable to load examination."
+            );
+        }
+
+        const examData =
+            await examResponse.json();
+
+        selectedExam =
+            examData.exam || examData.data || examData;
+
+
+        if (
+            !selectedExam ||
+            !selectedExam.id
+        ) {
+
+            throw new Error(
+                "Examination not found."
+            );
+        }
+
+
+        console.log(
+            "OES: Selected Exam:",
+            selectedExam
+        );
+
+
+        /* ========================================
+           LOAD QUESTIONS
+        ======================================== */
+
+        const questionResponse =
+            await fetch(
+                `${API_URL}/questions/exam/${examId}`
+            );
+
+        if (!questionResponse.ok) {
+
+            throw new Error(
+                "Unable to load questions."
+            );
+        }
+
+        const questionData =
+            await questionResponse.json();
+
+
+        questions =
+            questionData.questions ||
+            questionData.data ||
+            questionData ||
+            [];
+
+
+        if (!Array.isArray(questions)) {
+
+            questions = [];
+        }
+
+
+        console.log(
+            "OES: Questions from backend:",
+            questions
+        );
+
+
+        /* ========================================
+           FORMAT QUESTIONS
+        ======================================== */
+
+        questions =
+            questions.map(
+                function (question) {
+
+                    return {
+
+                        id:
+                            question.id,
+
+                        subject:
+                            question.subject || "",
+
+                        question:
+                            question.question || "",
+
+                        options: [
+
+                            question.option_a || "",
+
+                            question.option_b || "",
+
+                            question.option_c || "",
+
+                            question.option_d || ""
+
+                        ],
+
+                        correctAnswer:
+                            Number(
+                                question.correct_answer
+                            ),
+
+                        marks:
+                            Number(
+                                question.marks
+                            ) || 1
+
+                    };
+
+                }
+            );
+
+
+        /* ========================================
+           SHUFFLE QUESTIONS
+        ======================================== */
+
+        questions =
+            shuffleArray(
+                questions
+            );
+
+
+        /* ========================================
+           QUESTION LIMIT
+        ======================================== */
+
+        const requestedQuestionCount =
+            Number(
+                selectedExam.questions
+            ) || questions.length;
+
+
+        if (
+            questions.length >
+            requestedQuestionCount
+        ) {
+
+            questions =
+                questions.slice(
+                    0,
+                    requestedQuestionCount
                 );
-
-
-            if (
-                subject &&
-                Array.isArray(subject.questions)
-            ) {
-
-                subject.questions.forEach(
-                    function (question) {
-
-                        if (
-                            question &&
-                            question.question &&
-                            Array.isArray(question.options) &&
-                            question.options.length >= 4
-                        ) {
-
-                            questions.push({
-
-                                id:
-                                    question.id ||
-                                    Date.now() +
-                                    Math.random(),
-
-                                subjectId:
-                                    subject.id,
-
-                                subjectName:
-                                    subject.name,
-
-                                question:
-                                    question.question,
-
-                                options:
-                                    question.options,
-
-                                correctAnswer:
-                                    Number(
-                                        question.correctAnswer
-                                    )
-
-                            });
-
-                        }
-
-                    }
-                );
-
-            }
 
         }
-    );
+
+
+        /* ========================================
+           NO QUESTIONS
+        ======================================== */
+
+        if (
+            questions.length === 0
+        ) {
+
+            alert(
+                "No questions are available for this examination."
+            );
+
+            window.location.href =
+                "dashboard.html";
+
+            return;
+        }
+
+
+        /* ========================================
+           CREATE ANSWER ARRAY
+        ======================================== */
+
+        userAnswers =
+            new Array(
+                questions.length
+            ).fill(null);
+
+
+        /* ========================================
+           TIMER
+        ======================================== */
+
+        timeLeft =
+            (
+                Number(
+                    selectedExam.duration
+                ) || 10
+            ) * 60;
+
+
+        /* ========================================
+           INITIALIZE UI
+        ======================================== */
+
+        updateExamHeader();
+
+        totalQuestionsElement.textContent =
+            questions.length;
+
+        renderQuestion();
+
+        renderQuestionPalette();
+
+        updateProgress();
+
+        startTimer();
+
+
+    } catch (error) {
+
+        console.error(
+            "OES Exam Error:",
+            error
+        );
+
+        alert(
+            "Unable to load examination. Please try again."
+        );
+
+        window.location.href =
+            "dashboard.html";
+    }
 
 }
 
 
 /* ========================================
-   REMOVE DUPLICATE QUESTIONS
-======================================== */
-
-const uniqueQuestions = [];
-
-const questionKeys = new Set();
-
-
-questions.forEach(
-    function (question) {
-
-        const key =
-            String(question.question)
-                .trim()
-                .toLowerCase();
-
-
-        if (!questionKeys.has(key)) {
-
-            questionKeys.add(key);
-
-            uniqueQuestions.push(
-                question
-            );
-
-        }
-
-    }
-);
-
-
-questions =
-    uniqueQuestions;
-
-
-/* ========================================
-   SHUFFLE QUESTIONS
+   SHUFFLE ARRAY
 ======================================== */
 
 function shuffleArray(array) {
@@ -343,7 +402,8 @@ function shuffleArray(array) {
 
         const j =
             Math.floor(
-                Math.random() * (i + 1)
+                Math.random() *
+                (i + 1)
             );
 
 
@@ -360,161 +420,7 @@ function shuffleArray(array) {
 
 
     return shuffled;
-
 }
-
-
-/*
-   IMPORTANT:
-   Yahi shuffled array test ke
-   poore session mein use hoga.
-*/
-
-questions =
-    shuffleArray(questions);
-
-
-/* ========================================
-   QUESTION LIMIT
-======================================== */
-
-const requestedQuestionCount =
-    Number(
-        selectedExam.questions
-    ) || questions.length;
-
-
-if (
-    questions.length >
-    requestedQuestionCount
-) {
-
-    questions =
-        questions.slice(
-            0,
-            requestedQuestionCount
-        );
-
-}
-
-
-/* ========================================
-   NO QUESTIONS AVAILABLE
-======================================== */
-
-if (questions.length === 0) {
-
-    alert(
-        "No questions are available for this examination. Please ask the admin to add questions to the selected subject."
-    );
-
-
-    window.location.href =
-        "dashboard.html";
-
-}
-
-
-/* ========================================
-   EXAM VARIABLES
-======================================== */
-
-let currentQuestionIndex = 0;
-
-
-let userAnswers =
-    new Array(
-        questions.length
-    ).fill(null);
-
-
-let timeLeft =
-    (
-        Number(
-            selectedExam.duration
-        ) || 10
-    ) * 60;
-
-
-let timerInterval;
-
-
-let examSubmitted =
-    false;
-
-
-/* ========================================
-   GET HTML ELEMENTS
-======================================== */
-
-const timerElement =
-    document.getElementById("timer");
-
-
-const currentQuestionElement =
-    document.getElementById(
-        "currentQuestion"
-    );
-
-
-const totalQuestionsElement =
-    document.getElementById(
-        "totalQuestions"
-    );
-
-
-const answeredCountElement =
-    document.getElementById(
-        "answeredCount"
-    );
-
-
-const progressFill =
-    document.getElementById(
-        "progressFill"
-    );
-
-
-const questionNumberElement =
-    document.getElementById(
-        "questionNumber"
-    );
-
-
-const questionTextElement =
-    document.getElementById(
-        "questionText"
-    );
-
-
-const optionsContainer =
-    document.getElementById(
-        "optionsContainer"
-    );
-
-
-const previousButton =
-    document.getElementById(
-        "previousBtn"
-    );
-
-
-const nextButton =
-    document.getElementById(
-        "nextBtn"
-    );
-
-
-const questionPalette =
-    document.getElementById(
-        "questionPalette"
-    );
-
-
-const submitExamButton =
-    document.getElementById(
-        "submitExamBtn"
-    );
 
 
 /* ========================================
@@ -527,7 +433,6 @@ function updateExamHeader() {
         document.querySelector(
             ".exam-header h1"
         );
-
 
     if (examHeading) {
 
@@ -542,40 +447,12 @@ function updateExamHeader() {
             ".exam-header p"
         );
 
-
     if (examDescription) {
 
         examDescription.textContent =
             `Answer all ${questions.length} questions and submit your examination before the timer ends.`;
 
     }
-
-}
-
-
-/* ========================================
-   INITIALIZE EXAM
-======================================== */
-
-if (questionTextElement) {
-
-    updateExamHeader();
-
-
-    totalQuestionsElement.textContent =
-        questions.length;
-
-
-    renderQuestion();
-
-
-    renderQuestionPalette();
-
-
-    updateProgress();
-
-
-    startTimer();
 
 }
 
@@ -659,12 +536,10 @@ function renderQuestion() {
 
                     userAnswers[
                         currentQuestionIndex
-                    ] =
-                        index;
+                    ] = index;
 
 
                     updateProgress();
-
 
                     updateQuestionPalette();
 
@@ -702,7 +577,6 @@ function renderQuestion() {
 
     updateQuestionPalette();
 
-
     updateProgress();
 
 }
@@ -724,7 +598,6 @@ if (nextButton) {
             ) {
 
                 currentQuestionIndex++;
-
 
                 renderQuestion();
 
@@ -751,7 +624,6 @@ if (previousButton) {
             ) {
 
                 currentQuestionIndex--;
-
 
                 renderQuestion();
 
@@ -804,7 +676,6 @@ function renderQuestionPalette() {
 
                     currentQuestionIndex =
                         index;
-
 
                     renderQuestion();
 
@@ -942,7 +813,6 @@ function startTimer() {
 
                 timeLeft--;
 
-
                 updateTimerDisplay();
 
 
@@ -1053,18 +923,17 @@ if (submitExamButton) {
 
 
 /* ========================================
-   CALCULATE & SAVE RESULT
+   SUBMIT EXAM TO BACKEND
 ======================================== */
 
-function submitExam() {
+async function submitExam() {
 
     if (examSubmitted) {
         return;
     }
 
 
-    examSubmitted =
-        true;
+    examSubmitted = true;
 
 
     clearInterval(
@@ -1072,345 +941,142 @@ function submitExam() {
     );
 
 
-    let correctAnswers =
-        0;
+    try {
 
+        /* ========================================
+           PREPARE ANSWERS FOR BACKEND
+        ======================================== */
 
-    let wrongAnswers =
-        0;
+        const answers =
+            questions.map(
+                function (question, index) {
 
+                    return {
 
-    /* ========================================
-       CHECK ANSWERS
-    ======================================== */
+                        question_id:
+                            question.id,
 
-    userAnswers.forEach(
-        function (answer, index) {
+                        selected_answer:
+                            userAnswers[index]
 
-            if (answer === null) {
-                return;
-            }
+                    };
 
-
-            if (
-                answer ===
-                questions[index].correctAnswer
-            ) {
-
-                correctAnswers++;
-
-            } else {
-
-                wrongAnswers++;
-
-            }
-
-        }
-    );
-
-
-    const attempted =
-        correctAnswers +
-        wrongAnswers;
-
-
-    /* ========================================
-       NEGATIVE MARKING
-    ======================================== */
-
-    const negativeMark =
-        Number(
-            selectedExam.negativeMark
-        ) || 0;
-
-
-    const marks =
-        correctAnswers -
-        (
-            wrongAnswers *
-            negativeMark
-        );
-
-
-    const percentage =
-        Math.max(
-            0,
-            (
-                marks /
-                questions.length
-            ) * 100
-        );
-
-
-    /* ========================================
-       STUDENT INFORMATION
-    ======================================== */
-
-    const studentName =
-        currentStudent &&
-        currentStudent.fullName
-            ? currentStudent.fullName
-            : "Unknown Student";
-
-
-    const studentEmail =
-        currentStudent &&
-        currentStudent.email
-            ? currentStudent.email
-            : userEmail;
-
-
-    /* ========================================
-       IMPORTANT:
-       SAVE EXACT SHUFFLED QUESTION ORDER
-    ======================================== */
-
-    const questionSnapshot =
-        questions.map(
-            function (question) {
-
-                return {
-
-                    id:
-                        question.id,
-
-                    subjectId:
-                        question.subjectId,
-
-                    subjectName:
-                        question.subjectName,
-
-                    question:
-                        question.question,
-
-                    options:
-                        Array.isArray(
-                            question.options
-                        )
-                            ? [
-                                ...question.options
-                            ]
-                            : [],
-
-                    correctAnswer:
-                        Number(
-                            question.correctAnswer
-                        )
-
-                };
-
-            }
-        );
-
-
-    /*
-       IMPORTANT:
-       userAnswers aur questionSnapshot
-       dono same index/order mein hain.
-
-       Example:
-
-       questions[0] → userAnswers[0]
-       questions[1] → userAnswers[1]
-       questions[2] → userAnswers[2]
-
-       Isliye review mein exact same
-       shuffled sequence milega.
-    */
-
-
-/* ========================================
-   CREATE RESULT
-======================================== */
-
-    const result = {
-
-        studentId:
-            currentStudent &&
-            currentStudent.id
-                ? currentStudent.id
-                : null,
-
-
-        studentName:
-            studentName,
-
-
-        studentEmail:
-            studentEmail,
-
-
-        examId:
-            selectedExam.id,
-
-
-        examName:
-            selectedExam.name,
-
-
-        totalQuestions:
-            questions.length,
-
-
-        attempted:
-            attempted,
-
-
-        correct:
-            correctAnswers,
-
-
-        wrong:
-            wrongAnswers,
-
-
-        marks:
-            marks,
-
-
-        percentage:
-            percentage,
-
-
-        negativeMark:
-            negativeMark,
-
-
-        /*
-           Student ke answers
-           shuffled question order ke according
-        */
-
-        answers:
-            [
-                ...userAnswers
-            ],
-
-
-        /*
-           VERY IMPORTANT:
-           Test mein jo shuffled questions
-           actually aaye the unka snapshot.
-        */
-
-        questions:
-            questionSnapshot,
-
-
-        submittedAt:
-            new Date().toISOString()
-
-    };
-
-
-    /* ========================================
-       SAVE LATEST RESULT
-    ======================================== */
-
-    localStorage.setItem(
-        "oesLatestResult",
-        JSON.stringify(result)
-    );
-
-
-    /* ========================================
-       GET RESULT HISTORY
-    ======================================== */
-
-    let allResults = [];
-
-
-    const savedResults =
-        localStorage.getItem(
-            "oesResults"
-        );
-
-
-    if (savedResults) {
-
-        try {
-
-            const parsedResults =
-                JSON.parse(
-                    savedResults
-                );
-
-
-            if (
-                Array.isArray(
-                    parsedResults
-                )
-            ) {
-
-                allResults =
-                    parsedResults;
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                "Could not read result history:",
-                error
+                }
             );
 
 
-            allResults = [];
+        const payload = {
+
+            user_id:
+                currentStudent &&
+                currentStudent.id
+                    ? currentStudent.id
+                    : null,
+
+            exam_id:
+                selectedExam.id,
+
+            answers:
+                answers
+
+        };
+
+
+        console.log(
+            "OES: Sending result to backend:",
+            payload
+        );
+
+
+        /* ========================================
+           SEND RESULT
+        ======================================== */
+
+        const response =
+            await fetch(
+                `${API_URL}/results`,
+                {
+
+                    method: "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify(
+                            payload
+                        )
+
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "OES: Backend result:",
+            data
+        );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.message ||
+                "Result submission failed."
+            );
 
         }
 
+
+        /* ========================================
+           SAVE LATEST RESULT LOCALLY
+        ======================================== */
+
+        const backendResult =
+            data.result ||
+            data.data ||
+            data;
+
+
+        localStorage.setItem(
+            "oesLatestResult",
+            JSON.stringify(
+                backendResult
+            )
+        );
+
+
+        /* ========================================
+           OPEN RESULT PAGE
+        ======================================== */
+
+        window.location.href =
+            "result.html";
+
+
+    } catch (error) {
+
+        console.error(
+            "OES Result Error:",
+            error
+        );
+
+
+        examSubmitted = false;
+
+
+        alert(
+            "Result submit nahi ho paya.\n\nPlease check your internet connection and try again."
+        );
+
     }
-
-
-    /* ========================================
-       ADD RESULT
-    ======================================== */
-
-    allResults.push(
-        result
-    );
-
-
-    /* ========================================
-       SAVE RESULT HISTORY
-    ======================================== */
-
-    localStorage.setItem(
-        "oesResults",
-        JSON.stringify(
-            allResults
-        )
-    );
-
-
-    /* ========================================
-       DEBUG
-    ======================================== */
-
-    console.log(
-        "OES EXACT SHUFFLED QUESTIONS:",
-        questionSnapshot
-    );
-
-
-    console.log(
-        "OES EXACT USER ANSWERS:",
-        userAnswers
-    );
-
-
-    console.log(
-        "OES FINAL RESULT:",
-        result
-    );
-
-
-    /* ========================================
-       OPEN RESULT PAGE
-    ======================================== */
-
-    window.location.href =
-        "result.html";
 
 }
 
@@ -1462,22 +1128,12 @@ function escapeHtml(value) {
 
 
 /* ========================================
-   DEBUG INFORMATION
+   START
 ======================================== */
 
 console.log(
-    "OES Selected Exam:",
-    selectedExam
+    "OES Exam: Connected to LIVE Render Backend"
 );
 
 
-console.log(
-    "OES Available Subjects:",
-    allSubjects
-);
-
-
-console.log(
-    "OES FINAL SHUFFLED EXAM QUESTIONS:",
-    questions
-);
+startExam();
