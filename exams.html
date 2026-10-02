@@ -23,7 +23,9 @@
 <body>
 
 
-    <!-- Header -->
+    <!-- ========================================
+         HEADER
+    ========================================= -->
 
     <header class="header">
 
@@ -65,7 +67,9 @@
 
 
 
-    <!-- Exam Management -->
+    <!-- ========================================
+         EXAM MANAGEMENT
+    ========================================= -->
 
     <main>
 
@@ -74,7 +78,9 @@
             <div class="container">
 
 
-                <!-- Page Header -->
+                <!-- ========================================
+                     PAGE HEADER
+                ========================================= -->
 
                 <div class="dashboard-welcome">
 
@@ -101,7 +107,9 @@
 
 
 
-                <!-- Exam Statistics -->
+                <!-- ========================================
+                     EXAM STATISTICS
+                ========================================= -->
 
                 <div class="stats-grid">
 
@@ -131,7 +139,9 @@
 
 
 
-                <!-- Create Exam -->
+                <!-- ========================================
+                     CREATE EXAMINATION
+                ========================================= -->
 
                 <div class="dashboard-heading">
 
@@ -158,7 +168,9 @@
                     <form id="examForm">
 
 
-                        <!-- Exam Name -->
+                        <!-- ========================================
+                             EXAM NAME
+                        ========================================= -->
 
                         <div class="form-group">
 
@@ -178,7 +190,9 @@
 
 
 
-                        <!-- Subjects -->
+                        <!-- ========================================
+                             SUBJECTS
+                        ========================================= -->
 
                         <div class="form-group">
 
@@ -191,7 +205,10 @@
                                 id="examSubjects"
                                 style="
                                     display: grid;
-                                    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                                    grid-template-columns: repeat(
+                                        auto-fit,
+                                        minmax(180px, 1fr)
+                                    );
                                     gap: 12px;
                                     margin-top: 10px;
                                 "
@@ -209,14 +226,17 @@
                                     color: #666;
                                 "
                             >
-                                Select one or more subjects for this examination.
+                                Select one or more subjects
+                                for this examination.
                             </small>
 
                         </div>
 
 
 
-                        <!-- Questions -->
+                        <!-- ========================================
+                             QUESTIONS
+                        ========================================= -->
 
                         <div class="form-group">
 
@@ -237,7 +257,9 @@
 
 
 
-                        <!-- Duration -->
+                        <!-- ========================================
+                             DURATION
+                        ========================================= -->
 
                         <div class="form-group">
 
@@ -258,7 +280,9 @@
 
 
 
-                        <!-- Negative Marking -->
+                        <!-- ========================================
+                             NEGATIVE MARKING
+                        ========================================= -->
 
                         <div class="form-group">
 
@@ -280,7 +304,9 @@
 
 
 
-                        <!-- Message -->
+                        <!-- ========================================
+                             MESSAGE
+                        ========================================= -->
 
                         <div
                             id="examMessage"
@@ -289,7 +315,9 @@
 
 
 
-                        <!-- Button -->
+                        <!-- ========================================
+                             CREATE BUTTON
+                        ========================================= -->
 
                         <button
                             type="submit"
@@ -305,7 +333,9 @@
 
 
 
-                <!-- Available Exams -->
+                <!-- ========================================
+                     AVAILABLE EXAMS
+                ========================================= -->
 
                 <div class="dashboard-heading results-heading">
 
@@ -331,11 +361,15 @@
                     class="exam-grid"
                 >
 
+                    <!-- Exams will appear here -->
+
                 </div>
 
 
 
-                <!-- Back -->
+                <!-- ========================================
+                     BACK TO ADMIN
+                ========================================= -->
 
                 <div
                     style="
@@ -362,7 +396,9 @@
 
 
 
-    <!-- Footer -->
+    <!-- ========================================
+         FOOTER
+    ========================================= -->
 
     <footer class="footer">
 
@@ -378,11 +414,19 @@
 
 
 
-    <!-- JavaScript -->
+    <!-- ========================================
+         JAVASCRIPT
+    ========================================= -->
 
     <script src="js/auth.js"></script>
 
-    <script src="js/admin.js"></script>
+    <!--
+        IMPORTANT:
+        Do NOT load admin.js on this page.
+        exams.js handles exam management.
+    -->
+
+    <script src="js/exams.js"></script>
 
 
 </body>
