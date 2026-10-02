@@ -13,9 +13,14 @@ if (loginForm) {
 
         event.preventDefault();
 
-        const emailInput = document.getElementById("loginEmail");
-        const passwordInput = document.getElementById("loginPassword");
-        const message = document.getElementById("loginMessage");
+        const emailInput =
+            document.getElementById("loginEmail");
+
+        const passwordInput =
+            document.getElementById("loginPassword");
+
+        const message =
+            document.getElementById("loginMessage");
 
         const email = emailInput
             ? emailInput.value.trim().toLowerCase()
@@ -25,51 +30,68 @@ if (loginForm) {
             ? passwordInput.value
             : "";
 
+
+        // ========================================
+        // CLEAR OLD MESSAGE
+        // ========================================
+
         if (message) {
             message.style.display = "none";
         }
+
 
         // ========================================
         // VALIDATION
         // ========================================
 
         if (!email || !password) {
+
             showLoginMessage(
                 "Please enter your email and password.",
                 false
             );
+
             return;
         }
 
+
         // ========================================
-        // BLOCK ADMIN ACCOUNT
+        // BLOCK ADMIN FROM STUDENT LOGIN
         // ========================================
 
         if (email === "admin@oes.com") {
+
             showLoginMessage(
                 "Admin account cannot login from Student Login. Please use Admin Login.",
                 false
             );
+
             return;
         }
+
 
         // ========================================
         // LOGIN BUTTON
         // ========================================
 
         const submitButton =
-            loginForm.querySelector('button[type="submit"]');
+            loginForm.querySelector(
+                'button[type="submit"]'
+            );
 
         if (submitButton) {
+
             submitButton.disabled = true;
             submitButton.textContent = "Logging in...";
+
         }
 
-        try {
 
-            // ========================================
-            // LIVE BACKEND LOGIN
-            // ========================================
+        // ========================================
+        // LOGIN REQUEST
+        // ========================================
+
+        try {
 
             const response = await fetch(
                 `${API_URL}/auth/login`,
@@ -87,7 +109,9 @@ if (loginForm) {
                 }
             );
 
+
             const data = await response.json();
+
 
             // ========================================
             // LOGIN FAILED
@@ -96,12 +120,14 @@ if (loginForm) {
             if (!response.ok || !data.success) {
 
                 showLoginMessage(
-                    data.message || "Invalid email or password.",
+                    data.message ||
+                    "Invalid email or password.",
                     false
                 );
 
                 return;
             }
+
 
             // ========================================
             // LOGIN SUCCESS
@@ -109,40 +135,52 @@ if (loginForm) {
 
             const user = data.user;
 
-            // Save JWT token
+
+            // JWT TOKEN
+
             localStorage.setItem(
                 "oesToken",
                 data.token
             );
 
-            // Save role
+
+            // ROLE
+
             localStorage.setItem(
                 "oesUserRole",
                 user.role
             );
 
-            // Save email
+
+            // EMAIL
+
             localStorage.setItem(
                 "oesUserEmail",
                 user.email
             );
 
-            // Save login status
+
+            // LOGIN STATUS
+
             localStorage.setItem(
                 "oesLoggedIn",
                 "true"
             );
 
-            // Save student information
+
+            // STUDENT DATA
+
             localStorage.setItem(
                 "oesStudent",
                 JSON.stringify(user)
             );
 
+
             localStorage.setItem(
                 "oesCurrentStudent",
                 JSON.stringify(user)
             );
+
 
             // ========================================
             // SUCCESS MESSAGE
@@ -153,15 +191,18 @@ if (loginForm) {
                 true
             );
 
+
             // ========================================
             // REDIRECT
             // ========================================
 
             setTimeout(function () {
 
-                window.location.href = "dashboard.html";
+                window.location.href =
+                    "dashboard.html";
 
             }, 700);
+
 
         } catch (error) {
 
@@ -170,20 +211,26 @@ if (loginForm) {
                 error
             );
 
+
             showLoginMessage(
                 "Cannot connect to backend. Please try again.",
                 false
             );
 
+
         } finally {
 
             if (submitButton) {
+
                 submitButton.disabled = false;
                 submitButton.textContent = "Login";
+
             }
+
         }
 
     });
+
 }
 
 
@@ -196,23 +243,36 @@ function showLoginMessage(text, success) {
     const message =
         document.getElementById("loginMessage");
 
+
     if (!message) {
+
         alert(text);
         return;
+
     }
+
 
     message.style.display = "block";
 
     message.textContent = text;
 
+
     if (success) {
 
-        message.style.background = "#e8f8f1";
-        message.style.color = "#059669";
+        message.style.background =
+            "#e8f8f1";
+
+        message.style.color =
+            "#059669";
 
     } else {
 
-        message.style.background = "#fff0f0";
-        message.style.color = "#d93025";
+        message.style.background =
+            "#fff0f0";
+
+        message.style.color =
+            "#d93025";
+
     }
+
 }
