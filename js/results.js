@@ -1,6 +1,15 @@
 /* ========================================
    OES - Admin Results Management
+   Connected to LIVE Render Backend
 ======================================== */
+
+
+/* ========================================
+   API URL
+======================================== */
+
+const API_URL =
+    "https://oes-nx6c.onrender.com/api";
 
 
 /* ========================================
@@ -30,55 +39,114 @@ if (
 ======================================== */
 
 const resultsContainer =
-    document.getElementById("resultsContainer");
+    document.getElementById(
+        "resultsContainer"
+    );
 
 const resultCount =
-    document.getElementById("resultCount");
+    document.getElementById(
+        "resultCount"
+    );
 
 const noResults =
-    document.getElementById("noResults");
+    document.getElementById(
+        "noResults"
+    );
 
 
 /* ========================================
-   Load Results
+   Load Results From Backend
 ======================================== */
 
-function loadResults() {
+async function loadResults() {
 
-    let results = [];
+    try {
 
-
-    const savedResults =
-        localStorage.getItem("oesResults");
-
-
-    if (savedResults) {
-
-        try {
-
-            const parsedResults =
-                JSON.parse(savedResults);
+        console.log(
+            "Loading results from LIVE Render Backend..."
+        );
 
 
-            if (Array.isArray(parsedResults)) {
+        const response =
+            await fetch(
+                `${API_URL}/results`
+            );
 
-                results = parsedResults;
 
-            }
+        if (!response.ok) {
 
-        } catch (error) {
-
-            console.error(
-                "Error loading results:",
-                error
+            throw new Error(
+                `Server returned ${response.status}`
             );
 
         }
 
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Results API response:",
+            data
+        );
+
+
+        /* ========================================
+           Get Results Array
+           
+           Supports:
+           data.results
+           data.result
+        ======================================== */
+
+        let results = [];
+
+
+        if (
+            data &&
+            Array.isArray(data.results)
+        ) {
+
+            results =
+                data.results;
+
+        } else if (
+            data &&
+            Array.isArray(data.result)
+        ) {
+
+            results =
+                data.result;
+
+        }
+
+
+        displayResults(results);
+
+
+    } catch (error) {
+
+        console.error(
+            "Error loading results from backend:",
+            error
+        );
+
+
+        displayResults([]);
+
+
+        if (noResults) {
+
+            noResults.style.display =
+                "block";
+
+            noResults.textContent =
+                "Unable to load results. Please refresh the page.";
+
+        }
+
     }
-
-
-    displayResults(results);
 
 }
 
@@ -89,6 +157,17 @@ function loadResults() {
 
 function displayResults(results) {
 
+    if (!resultsContainer) {
+
+        console.error(
+            "resultsContainer not found."
+        );
+
+        return;
+
+    }
+
+
     resultsContainer.innerHTML = "";
 
 
@@ -97,13 +176,25 @@ function displayResults(results) {
     ======================================== */
 
     if (
-        !results ||
+        !Array.isArray(results) ||
         results.length === 0
     ) {
 
-        resultCount.textContent = "0";
+        if (resultCount) {
 
-        noResults.style.display = "block";
+            resultCount.textContent =
+                "0";
+
+        }
+
+
+        if (noResults) {
+
+            noResults.style.display =
+                "block";
+
+        }
+
 
         return;
 
@@ -114,10 +205,20 @@ function displayResults(results) {
        Result Count
     ======================================== */
 
-    resultCount.textContent =
-        results.length;
+    if (resultCount) {
 
-    noResults.style.display = "none";
+        resultCount.textContent =
+            results.length;
+
+    }
+
+
+    if (noResults) {
+
+        noResults.style.display =
+            "none";
+
+    }
 
 
     /* ========================================
@@ -128,56 +229,97 @@ function displayResults(results) {
         function (result) {
 
             const resultCard =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
 
             resultCard.className =
                 "exam-card";
 
 
+            /* ========================================
+               Support Backend Field Names
+            ======================================== */
+
             const percentage =
-                Number(result.percentage) || 0;
+                Number(
+                    result.percentage ??
+                    result.percentage_score ??
+                    0
+                ) || 0;
 
 
             const marks =
-                Number(result.marks) || 0;
+                Number(
+                    result.marks ??
+                    result.marks_obtained ??
+                    result.score ??
+                    0
+                ) || 0;
 
 
             const correct =
-                Number(result.correct) || 0;
+                Number(
+                    result.correct ??
+                    result.correct_answers ??
+                    0
+                ) || 0;
 
 
             const wrong =
-                Number(result.wrong) || 0;
+                Number(
+                    result.wrong ??
+                    result.wrong_answers ??
+                    0
+                ) || 0;
 
 
             const attempted =
-                Number(result.attempted) || 0;
+                Number(
+                    result.attempted ??
+                    result.attempted_questions ??
+                    0
+                ) || 0;
 
+
+            /* ========================================
+               Student Information
+            ======================================== */
+
+            const studentName =
+                result.studentName ??
+                result.student_name ??
+                result.name ??
+                "Unknown Student";
+
+
+            const studentEmail =
+                result.studentEmail ??
+                result.student_email ??
+                result.email ??
+                "Not Available";
+
+
+            /* ========================================
+               Exam Information
+            ======================================== */
+
+            const examName =
+                result.examName ??
+                result.exam_name ??
+                result.examNameText ??
+                "General Aptitude Test";
+
+
+            /* ========================================
+               Status
+            ======================================== */
 
             const status =
                 percentage >= 40
                     ? "PASS"
                     : "FAIL";
-
-
-            /* ========================================
-               Student Information From Result
-            ======================================== */
-
-            const studentName =
-                result.studentName ||
-                "Unknown Student";
-
-
-            const studentEmail =
-                result.studentEmail ||
-                "Not Available";
-
-
-            const examName =
-                result.examName ||
-                "General Aptitude Test";
 
 
             /* ========================================
