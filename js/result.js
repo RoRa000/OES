@@ -317,12 +317,14 @@ async function loadResult() {
                 ) {
 
                     /*
-                     * FIX:
-                     * Backend sends the complete result
-                     * inside detailData.result.
+                     * Keep the complete backend response.
+                     * This allows the code to read answers
+                     * whether they are returned directly
+                     * or inside result.
                      */
+
                     detailedResult =
-                        detailData.result;
+                        detailData;
 
                 }
 
@@ -421,6 +423,9 @@ async function loadResult() {
            BUILD ANSWERS + QUESTIONS
         ======================================== */
 
+        let answers = [];
+
+
         if (
             detailedResult &&
             Array.isArray(
@@ -428,9 +433,36 @@ async function loadResult() {
             )
         ) {
 
-            const answers =
+            /*
+             * Backend format:
+             * detailData.answers
+             */
+
+            answers =
                 detailedResult.answers;
 
+        } else if (
+            detailedResult &&
+            detailedResult.result &&
+            Array.isArray(
+                detailedResult.result.answers
+            )
+        ) {
+
+            /*
+             * Backend format:
+             * detailData.result.answers
+             */
+
+            answers =
+                detailedResult.result.answers;
+
+        }
+
+
+        if (
+            answers.length > 0
+        ) {
 
             resultData.answers =
                 answers.map(
@@ -501,6 +533,13 @@ async function loadResult() {
             console.log(
                 "Answer review loaded:",
                 resultData.questions
+            );
+
+        } else {
+
+            console.warn(
+                "No answer data received from backend.",
+                detailedResult
             );
 
         }
@@ -939,7 +978,7 @@ function displayResult() {
 
     /* ========================================
        STATISTICS
-======================================== */
+    ======================================== */
 
     if (totalQuestionsElement) {
 
