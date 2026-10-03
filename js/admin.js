@@ -71,6 +71,65 @@ async function loadDashboardStatistics() {
 
 
     /* ========================================
+       TOTAL STUDENTS
+       
+       IMPORTANT:
+       Students are now counted from
+       Supabase PostgreSQL database.
+       
+       This is NOT using localStorage.
+    ======================================== */
+
+    try {
+
+        const studentsResponse =
+            await fetch(
+                `${API_URL}/users/students/count`
+            );
+
+
+        const studentsData =
+            await studentsResponse.json();
+
+
+        console.log(
+            "Student count from database:",
+            studentsData
+        );
+
+
+        if (
+            studentsData.success &&
+            totalStudentsElement
+        ) {
+
+            totalStudentsElement.textContent =
+                Number(
+                    studentsData.totalStudents || 0
+                );
+
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "Error loading students:",
+            error
+        );
+
+
+        if (totalStudentsElement) {
+
+            totalStudentsElement.textContent =
+                "0";
+
+        }
+
+    }
+
+
+    /* ========================================
        TOTAL EXAMS
     ======================================== */
 
@@ -88,7 +147,9 @@ async function loadDashboardStatistics() {
 
         if (
             examsData.success &&
-            Array.isArray(examsData.exams)
+            Array.isArray(
+                examsData.exams
+            )
         ) {
 
             if (totalExamsElement) {
@@ -131,7 +192,9 @@ async function loadDashboardStatistics() {
 
         if (
             examsData.success &&
-            Array.isArray(examsData.exams)
+            Array.isArray(
+                examsData.exams
+            )
         ) {
 
             for (
@@ -183,6 +246,7 @@ async function loadDashboardStatistics() {
 
         }
 
+
     } catch (error) {
 
         console.error(
@@ -211,7 +275,9 @@ async function loadDashboardStatistics() {
 
         if (
             resultsData.success &&
-            Array.isArray(resultsData.results)
+            Array.isArray(
+                resultsData.results
+            )
         ) {
 
             if (totalResultsElement) {
@@ -231,64 +297,6 @@ async function loadDashboardStatistics() {
         );
 
     }
-
-
-    /* ========================================
-       TOTAL STUDENTS
-       
-       Temporary:
-       Backend mein abhi users GET API
-       nahi banayi hai.
-       
-       Isliye existing localStorage data
-       fallback ke liye use kar rahe hain.
-    ======================================== */
-
-    let totalStudents = 0;
-
-
-    const studentsData =
-        localStorage.getItem(
-            "oesStudents"
-        );
-
-
-    if (studentsData) {
-
-        try {
-
-            const students =
-                JSON.parse(
-                    studentsData
-                );
-
-
-            if (Array.isArray(students)) {
-
-                totalStudents =
-                    students.length;
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                "Error loading students:",
-                error
-            );
-
-        }
-
-    }
-
-
-    if (totalStudentsElement) {
-
-        totalStudentsElement.textContent =
-            totalStudents;
-
-    }
-
 
 }
 
