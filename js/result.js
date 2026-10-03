@@ -1,186 +1,4 @@
 /* ========================================
-   OES - Dynamic Exam Result
-   LIVE BACKEND RESULT SYSTEM
-======================================== */
-
-
-/* ========================================
-   API
-======================================== */
-
-const API_URL =
-    "https://oes-nx6c.onrender.com/api";
-
-
-/* ========================================
-   LOGIN PROTECTION
-======================================== */
-
-const userRole =
-    localStorage.getItem("oesUserRole");
-
-const userEmail =
-    localStorage.getItem("oesUserEmail");
-
-
-if (
-    userRole !== "student" ||
-    !userEmail
-) {
-
-    window.location.href =
-        "login.html";
-
-}
-
-
-/* ========================================
-   CURRENT STUDENT
-======================================== */
-
-const currentStudent =
-    JSON.parse(
-        localStorage.getItem(
-            "oesCurrentStudent"
-        ) || "null"
-    );
-
-
-/* ========================================
-   RESULT
-======================================== */
-
-let resultData = null;
-
-
-/* ========================================
-   GET HTML ELEMENTS
-======================================== */
-
-const resultStatus =
-    document.getElementById(
-        "resultStatus"
-    );
-
-const resultExamName =
-    document.getElementById(
-        "resultExamName"
-    );
-
-const marksObtained =
-    document.getElementById(
-        "marksObtained"
-    );
-
-const scoreTotal =
-    document.getElementById(
-        "scoreTotal"
-    );
-
-const totalQuestionsElement =
-    document.getElementById(
-        "totalQuestions"
-    );
-
-const attemptedQuestions =
-    document.getElementById(
-        "attemptedQuestions"
-    );
-
-const correctAnswers =
-    document.getElementById(
-        "correctAnswers"
-    );
-
-const wrongAnswers =
-    document.getElementById(
-        "wrongAnswers"
-    );
-
-const percentage =
-    document.getElementById(
-        "percentage"
-    );
-
-const percentageCenter =
-    document.getElementById(
-        "percentageCenter"
-    );
-
-const chartCorrect =
-    document.getElementById(
-        "chartCorrect"
-    );
-
-const chartWrong =
-    document.getElementById(
-        "chartWrong"
-    );
-
-const chartSkipped =
-    document.getElementById(
-        "chartSkipped"
-    );
-
-const tableTotal =
-    document.getElementById(
-        "tableTotal"
-    );
-
-const tableAttempted =
-    document.getElementById(
-        "tableAttempted"
-    );
-
-const tableCorrect =
-    document.getElementById(
-        "tableCorrect"
-    );
-
-const tableWrong =
-    document.getElementById(
-        "tableWrong"
-    );
-
-const tableSkipped =
-    document.getElementById(
-        "tableSkipped"
-    );
-
-const tablePercentage =
-    document.getElementById(
-        "tablePercentage"
-    );
-
-const tableStatus =
-    document.getElementById(
-        "tableStatus"
-    );
-
-const reviewBtn =
-    document.getElementById(
-        "reviewBtn"
-    );
-
-const answerReview =
-    document.getElementById(
-        "answerReview"
-    );
-
-const reviewContainer =
-    document.getElementById(
-        "reviewContainer"
-    );
-
-
-/* ========================================
-   REVIEW QUESTIONS
-======================================== */
-
-let reviewQuestions = [];
-
-
-/* ========================================
    LOAD RESULT
 ======================================== */
 
@@ -189,185 +7,433 @@ async function loadResult() {
     try {
 
         console.log(
-            "OES Result: Loading latest result..."
+            "OES Result: Loading student result..."
         );
 
 
-        /*
-           Backend result endpoint:
-
-           GET /api/results/student/:userId
-        */
+        /* ========================================
+           CHECK STUDENT ID
+        ======================================== */
 
         if (
-            currentStudent &&
-            currentStudent.id
+            !currentStudent ||
+            !currentStudent.id
         ) {
 
-            const response =
-                await fetch(
-                    `${API_URL}/results/student/${currentStudent.id}`
-                );
-
-
-            if (response.ok) {
-
-                const data =
-                    await response.json();
-
-
-                console.log(
-                    "OES Backend Results:",
-                    data
-                );
-
-
-                let results =
-                    data.results ||
-                    data.data ||
-                    data;
-
-
-                if (
-                    Array.isArray(results) &&
-                    results.length > 0
-                ) {
-
-                    /*
-                       Latest result first
-                    */
-
-                    results =
-                        [...results].sort(
-                            function (a, b) {
-
-                                return (
-                                    new Date(
-                                        b.submitted_at ||
-                                        b.submittedAt ||
-                                        0
-                                    ) -
-                                    new Date(
-                                        a.submitted_at ||
-                                        a.submittedAt ||
-                                        0
-                                    )
-                                );
-
-                            }
-                        );
-
-
-                    const latestBackendResult =
-                        results[0];
-
-
-                    /*
-                       Convert backend result
-                       to frontend format
-                    */
-
-                    resultData = {
-
-                        id:
-                            latestBackendResult.id,
-
-                        studentId:
-                            latestBackendResult.user_id ||
-                            latestBackendResult.studentId,
-
-                        examId:
-                            latestBackendResult.exam_id ||
-                            latestBackendResult.examId,
-
-                        examName:
-                            latestBackendResult.exam_name ||
-                            latestBackendResult.examName ||
-                            "Examination",
-
-                        totalQuestions:
-                            Number(
-                                latestBackendResult.total_questions ??
-                                latestBackendResult.totalQuestions
-                            ) || 0,
-
-                        attempted:
-                            Number(
-                                latestBackendResult.attempted
-                            ) || 0,
-
-                        correct:
-                            Number(
-                                latestBackendResult.correct
-                            ) || 0,
-
-                        wrong:
-                            Number(
-                                latestBackendResult.wrong
-                            ) || 0,
-
-                        marks:
-                            Number(
-                                latestBackendResult.marks
-                            ) || 0,
-
-                        percentage:
-                            Number(
-                                latestBackendResult.percentage
-                            ) || 0,
-
-                        submittedAt:
-                            latestBackendResult.submitted_at ||
-                            latestBackendResult.submittedAt ||
-                            null,
-
-                        answers:
-                            latestBackendResult.answers ||
-                            [],
-
-                        questions:
-                            latestBackendResult.questions ||
-                            []
-
-                    };
-
-
-                    /*
-                       Save latest result locally
-                       for compatibility
-                    */
-
-                    localStorage.setItem(
-                        "oesLatestResult",
-                        JSON.stringify(
-                            resultData
-                        )
-                    );
-
-
-                } else {
-
-                    loadLocalResult();
-
-                }
-
-
-            } else {
-
-                console.warn(
-                    "Backend result request failed."
-                );
-
-                loadLocalResult();
-
-            }
-
-
-        } else {
+            console.error(
+                "Current student ID is missing."
+            );
 
             loadLocalResult();
 
+            displayResult();
+
+            return;
+
         }
+
+
+        const studentId =
+            Number(
+                currentStudent.id
+            );
+
+
+        console.log(
+            "Loading results for student ID:",
+            studentId
+        );
+
+
+        /* ========================================
+           GET STUDENT RESULTS
+        ======================================== */
+
+        const response =
+            await fetch(
+                `${API_URL}/results/student/${studentId}`
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Student result list:",
+            data
+        );
+
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.message ||
+                "Unable to load student result."
+            );
+
+        }
+
+
+        const results =
+            Array.isArray(data.results)
+                ? data.results
+                : [];
+
+
+        /* ========================================
+           NO RESULT
+        ======================================== */
+
+        if (
+            results.length === 0
+        ) {
+
+            console.log(
+                "No result found for this student."
+            );
+
+            loadLocalResult();
+
+            displayResult();
+
+            return;
+
+        }
+
+
+        /* ========================================
+           LATEST RESULT
+        ======================================== */
+
+        results.sort(
+            function (a, b) {
+
+                return (
+                    Number(b.id || 0) -
+                    Number(a.id || 0)
+                );
+
+            }
+        );
+
+
+        const latestResult =
+            results[0];
+
+
+        console.log(
+            "Latest result:",
+            latestResult
+        );
+
+
+        /* ========================================
+           GET COMPLETE RESULT
+           INCLUDING ANSWERS
+        ======================================== */
+
+        let detailedResult = null;
+
+
+        if (
+            latestResult.id
+        ) {
+
+            try {
+
+                const detailResponse =
+                    await fetch(
+                        `${API_URL}/results/${latestResult.id}`
+                    );
+
+
+                const detailData =
+                    await detailResponse.json();
+
+
+                console.log(
+                    "Detailed result API response:",
+                    detailData
+                );
+
+
+                if (
+                    detailResponse.ok &&
+                    detailData.success
+                ) {
+
+                    /*
+                       IMPORTANT:
+
+                       Backend returns the actual
+                       detailed result inside:
+
+                       detailData.result
+                    */
+
+                    detailedResult =
+                        detailData.result ||
+                        null;
+
+
+                    console.log(
+                        "Detailed result object:",
+                        detailedResult
+                    );
+
+
+                    if (
+                        detailedResult &&
+                        Array.isArray(
+                            detailedResult.answers
+                        )
+                    ) {
+
+                        console.log(
+                            "Answer rows received:",
+                            detailedResult.answers.length
+                        );
+
+                    } else {
+
+                        console.warn(
+                            "No answer rows found in detailed result."
+                        );
+
+                    }
+
+                }
+
+            } catch (detailError) {
+
+                console.error(
+                    "Detailed result error:",
+                    detailError
+                );
+
+            }
+
+        }
+
+
+        /* ========================================
+           CREATE FRONTEND RESULT
+        ======================================== */
+
+        resultData = {
+
+            id:
+                Number(
+                    latestResult.id
+                ),
+
+
+            studentId:
+                Number(
+                    latestResult.user_id ||
+                    currentStudent.id
+                ),
+
+
+            examId:
+                Number(
+                    latestResult.exam_id
+                ),
+
+
+            examName:
+                latestResult.exam_name ||
+                "Examination",
+
+
+            totalQuestions:
+                Number(
+                    latestResult.total_questions
+                ) || 0,
+
+
+            attempted:
+                Number(
+                    latestResult.attempted
+                ) || 0,
+
+
+            correct:
+                Number(
+                    latestResult.correct
+                ) || 0,
+
+
+            wrong:
+                Number(
+                    latestResult.wrong
+                ) || 0,
+
+
+            marks:
+                Number(
+                    latestResult.marks
+                ) || 0,
+
+
+            percentage:
+                Number(
+                    latestResult.percentage
+                ) || 0,
+
+
+            submittedAt:
+                latestResult.submitted_at ||
+                null,
+
+
+            answers: [],
+
+
+            questions: []
+
+        };
+
+
+        /* ========================================
+           BUILD ANSWERS + QUESTIONS
+        ======================================== */
+
+        if (
+            detailedResult &&
+            Array.isArray(
+                detailedResult.answers
+            )
+        ) {
+
+            const answers =
+                detailedResult.answers;
+
+
+            /*
+               Student selected answers
+            */
+
+            resultData.answers =
+                answers.map(
+                    function (answer) {
+
+                        if (
+                            answer.selected_answer ===
+                            null ||
+                            answer.selected_answer ===
+                            undefined
+                        ) {
+
+                            return null;
+
+                        }
+
+
+                        return Number(
+                            answer.selected_answer
+                        );
+
+                    }
+                );
+
+
+            /*
+               Question-wise review data
+            */
+
+            resultData.questions =
+                answers.map(
+                    function (answer) {
+
+                        return {
+
+                            id:
+                                Number(
+                                    answer.question_id
+                                ),
+
+
+                            question:
+                                answer.question ||
+                                "",
+
+
+                            options: [
+
+                                answer.option_a ||
+                                "",
+
+                                answer.option_b ||
+                                "",
+
+                                answer.option_c ||
+                                "",
+
+                                answer.option_d ||
+                                ""
+
+                            ],
+
+
+                            correctAnswer:
+                                Number(
+                                    answer.correct_answer
+                                )
+
+                        };
+
+                    }
+                );
+
+
+            console.log(
+                "ANSWER REVIEW QUESTIONS:",
+                resultData.questions
+            );
+
+
+            console.log(
+                "STUDENT ANSWERS:",
+                resultData.answers
+            );
+
+        } else {
+
+            console.warn(
+                "Detailed result did not contain answer data."
+            );
+
+        }
+
+
+        /* ========================================
+           SAVE RESULT LOCALLY
+        ======================================== */
+
+        localStorage.setItem(
+            "oesLatestResult",
+            JSON.stringify(
+                resultData
+            )
+        );
+
+
+        /* ========================================
+           DISPLAY
+        ======================================== */
+
+        displayResult();
+
+
+        console.log(
+            "OES Final Result:",
+            resultData
+        );
 
 
     } catch (error) {
@@ -378,956 +444,11 @@ async function loadResult() {
         );
 
 
-        /*
-           Local fallback
-        */
-
         loadLocalResult();
 
-    }
 
-
-    displayResult();
-
-
-    console.log(
-        "OES Final Result:",
-        resultData
-    );
-
-}
-
-
-/* ========================================
-   LOCAL RESULT FALLBACK
-======================================== */
-
-function loadLocalResult() {
-
-    try {
-
-        const savedResult =
-            localStorage.getItem(
-                "oesLatestResult"
-            );
-
-
-        if (savedResult) {
-
-            resultData =
-                JSON.parse(
-                    savedResult
-                );
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            "Error reading local result:",
-            error
-        );
-
-        resultData = null;
+        displayResult();
 
     }
 
 }
-
-
-/* ========================================
-   BUILD REVIEW QUESTIONS
-======================================== */
-
-function buildReviewQuestions() {
-
-    reviewQuestions = [];
-
-
-    /*
-       Exact shuffled snapshot
-    */
-
-    if (
-        resultData &&
-        Array.isArray(
-            resultData.questions
-        ) &&
-        resultData.questions.length > 0
-    ) {
-
-        reviewQuestions =
-            resultData.questions.map(
-                function (question) {
-
-                    return {
-
-                        id:
-                            question.id ||
-                            null,
-
-                        subjectId:
-                            question.subjectId ||
-                            null,
-
-                        subjectName:
-                            question.subjectName ||
-                            "",
-
-                        question:
-                            question.question ||
-                            "",
-
-                        options:
-                            Array.isArray(
-                                question.options
-                            )
-                                ? question.options
-                                : [],
-
-                        correctAnswer:
-                            Number(
-                                question.correctAnswer
-                            )
-
-                    };
-
-                }
-            );
-
-
-        console.log(
-            "Review questions loaded from submitted shuffled snapshot:",
-            reviewQuestions
-        );
-
-
-        return;
-
-    }
-
-
-    console.warn(
-        "Exact shuffled question snapshot is not available."
-    );
-
-}
-
-
-/* ========================================
-   NO RESULT
-======================================== */
-
-function showNoResult() {
-
-    if (resultStatus) {
-
-        resultStatus.textContent =
-            "NO RESULT AVAILABLE";
-
-    }
-
-
-    if (marksObtained) {
-
-        marksObtained.textContent =
-            "0";
-
-    }
-
-
-    if (scoreTotal) {
-
-        scoreTotal.textContent =
-            "0";
-
-    }
-
-
-    if (totalQuestionsElement) {
-
-        totalQuestionsElement.textContent =
-            "0";
-
-    }
-
-
-    if (attemptedQuestions) {
-
-        attemptedQuestions.textContent =
-            "0";
-
-    }
-
-
-    if (correctAnswers) {
-
-        correctAnswers.textContent =
-            "0";
-
-    }
-
-
-    if (wrongAnswers) {
-
-        wrongAnswers.textContent =
-            "0";
-
-    }
-
-
-    if (percentage) {
-
-        percentage.textContent =
-            "0%";
-
-    }
-
-
-    if (percentageCenter) {
-
-        percentageCenter.textContent =
-            "0%";
-
-    }
-
-}
-
-
-/* ========================================
-   DISPLAY RESULT
-======================================== */
-
-function displayResult() {
-
-    if (!resultData) {
-
-        showNoResult();
-
-        return;
-
-    }
-
-
-    const total =
-        Number(
-            resultData.totalQuestions
-        ) || 0;
-
-
-    const attempted =
-        Number(
-            resultData.attempted
-        ) || 0;
-
-
-    const correct =
-        Number(
-            resultData.correct
-        ) || 0;
-
-
-    const wrong =
-        Number(
-            resultData.wrong
-        ) || 0;
-
-
-    const skipped =
-        Math.max(
-            total - attempted,
-            0
-        );
-
-
-    const marks =
-        Number(
-            resultData.marks
-        ) || 0;
-
-
-    const percentageValue =
-        Number(
-            resultData.percentage
-        ) || 0;
-
-
-    /* ========================================
-       EXAM NAME
-    ======================================== */
-
-    if (resultExamName) {
-
-        resultExamName.textContent =
-            `Here is your complete performance analysis for ${
-                resultData.examName ||
-                "Examination"
-            }.`;
-
-    }
-
-
-    /* ========================================
-       RESULT STATUS
-    ======================================== */
-
-    const passed =
-        percentageValue >= 40;
-
-
-    if (resultStatus) {
-
-        resultStatus.textContent =
-            passed
-                ? "PASS"
-                : "FAIL";
-
-
-        resultStatus.style.color =
-            passed
-                ? "#34d399"
-                : "#f87171";
-
-    }
-
-
-    /* ========================================
-       SCORE
-    ======================================== */
-
-    if (marksObtained) {
-
-        marksObtained.textContent =
-            marks.toFixed(2);
-
-    }
-
-
-    if (scoreTotal) {
-
-        scoreTotal.textContent =
-            total;
-
-    }
-
-
-    /* ========================================
-       STATISTICS
-    ======================================== */
-
-    if (totalQuestionsElement) {
-
-        totalQuestionsElement.textContent =
-            total;
-
-    }
-
-
-    if (attemptedQuestions) {
-
-        attemptedQuestions.textContent =
-            attempted;
-
-    }
-
-
-    if (correctAnswers) {
-
-        correctAnswers.textContent =
-            correct;
-
-    }
-
-
-    if (wrongAnswers) {
-
-        wrongAnswers.textContent =
-            wrong;
-
-    }
-
-
-    if (percentage) {
-
-        percentage.textContent =
-            percentageValue.toFixed(2) +
-            "%";
-
-    }
-
-
-    if (percentageCenter) {
-
-        percentageCenter.textContent =
-            percentageValue.toFixed(1) +
-            "%";
-
-    }
-
-
-    /* ========================================
-       CHART DATA
-    ======================================== */
-
-    if (chartCorrect) {
-
-        chartCorrect.textContent =
-            correct;
-
-    }
-
-
-    if (chartWrong) {
-
-        chartWrong.textContent =
-            wrong;
-
-    }
-
-
-    if (chartSkipped) {
-
-        chartSkipped.textContent =
-            skipped;
-
-    }
-
-
-    createPieChart(
-        correct,
-        wrong,
-        skipped
-    );
-
-
-    /* ========================================
-       PERFORMANCE TABLE
-    ======================================== */
-
-    if (tableTotal) {
-
-        tableTotal.textContent =
-            total;
-
-    }
-
-
-    if (tableAttempted) {
-
-        tableAttempted.textContent =
-            attempted;
-
-    }
-
-
-    if (tableCorrect) {
-
-        tableCorrect.textContent =
-            correct;
-
-    }
-
-
-    if (tableWrong) {
-
-        tableWrong.textContent =
-            wrong;
-
-    }
-
-
-    if (tableSkipped) {
-
-        tableSkipped.textContent =
-            skipped;
-
-    }
-
-
-    if (tablePercentage) {
-
-        tablePercentage.textContent =
-            percentageValue.toFixed(2) +
-            "%";
-
-    }
-
-
-    if (tableStatus) {
-
-        tableStatus.textContent =
-            passed
-                ? "PASS"
-                : "FAIL";
-
-
-        tableStatus.className =
-            passed
-                ? "success-text"
-                : "danger-text";
-
-    }
-
-
-    /* ========================================
-       ANSWER REVIEW
-    ======================================== */
-
-    buildReviewQuestions();
-
-    createAnswerReview();
-
-}
-
-
-/* ========================================
-   PIE CHART
-======================================== */
-
-let resultChart = null;
-
-
-function createPieChart(
-    correct,
-    wrong,
-    skipped
-) {
-
-    const canvas =
-        document.getElementById(
-            "resultPieChart"
-        );
-
-
-    if (!canvas) {
-
-        return;
-
-    }
-
-
-    if (
-        typeof Chart ===
-        "undefined"
-    ) {
-
-        console.error(
-            "Chart.js was not loaded."
-        );
-
-        return;
-
-    }
-
-
-    if (resultChart) {
-
-        resultChart.destroy();
-
-    }
-
-
-    resultChart =
-        new Chart(
-            canvas,
-            {
-
-                type: "doughnut",
-
-                data: {
-
-                    labels: [
-                        "Correct",
-                        "Wrong",
-                        "Skipped"
-                    ],
-
-                    datasets: [
-
-                        {
-
-                            data: [
-                                correct,
-                                wrong,
-                                skipped
-                            ],
-
-                            backgroundColor: [
-                                "#34d399",
-                                "#ef4444",
-                                "#475569"
-                            ],
-
-                            borderColor:
-                                "#0d1210",
-
-                            borderWidth: 4,
-
-                            hoverOffset: 7
-
-                        }
-
-                    ]
-
-                },
-
-                options: {
-
-                    responsive: true,
-
-                    maintainAspectRatio:
-                        false,
-
-                    cutout: "70%",
-
-                    plugins: {
-
-                        legend: {
-
-                            display: false
-
-                        },
-
-                        tooltip: {
-
-                            callbacks: {
-
-                                label:
-                                    function (
-                                        context
-                                    ) {
-
-                                        return (
-                                            " " +
-                                            context.label +
-                                            ": " +
-                                            context.raw
-                                        );
-
-                                    }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-        );
-
-}
-
-
-/* ========================================
-   ANSWER REVIEW
-======================================== */
-
-function createAnswerReview() {
-
-    if (!reviewContainer) {
-
-        return;
-
-    }
-
-
-    reviewContainer.innerHTML = "";
-
-
-    if (
-        !Array.isArray(
-            reviewQuestions
-        ) ||
-        reviewQuestions.length === 0
-    ) {
-
-        reviewContainer.innerHTML = `
-
-            <div class="empty-results">
-
-                <div class="empty-icon">
-                    📝
-                </div>
-
-                <h3>
-                    Answer Review Not Available
-                </h3>
-
-                <p>
-                    The exact question snapshot is
-                    not available for this result.
-                </p>
-
-            </div>
-
-        `;
-
-        return;
-
-    }
-
-
-    /*
-       Backend result_answers may not contain
-       the full answer array in older results.
-
-       If answers are missing, review cannot
-       safely match answers to questions.
-    */
-
-    const answers =
-        Array.isArray(
-            resultData.answers
-        )
-            ? resultData.answers
-            : [];
-
-
-    reviewQuestions.forEach(
-        function (
-            question,
-            index
-        ) {
-
-            const studentAnswer =
-                answers[index];
-
-
-            const correctAnswer =
-                Number(
-                    question.correctAnswer
-                );
-
-
-            let answerText =
-                "Not Attempted";
-
-
-            if (
-                studentAnswer !== null &&
-                studentAnswer !== undefined &&
-                question.options[
-                    Number(studentAnswer)
-                ] !== undefined
-            ) {
-
-                answerText =
-                    question.options[
-                        Number(studentAnswer)
-                    ];
-
-            }
-
-
-            let correctText =
-                "Not Available";
-
-
-            if (
-                question.options[
-                    correctAnswer
-                ] !== undefined
-            ) {
-
-                correctText =
-                    question.options[
-                        correctAnswer
-                    ];
-
-            }
-
-
-            let statusText =
-                "Not Attempted";
-
-
-            if (
-                studentAnswer === null ||
-                studentAnswer === undefined
-            ) {
-
-                statusText =
-                    "Not Attempted";
-
-            } else if (
-                Number(studentAnswer) ===
-                correctAnswer
-            ) {
-
-                statusText =
-                    "Correct";
-
-            } else {
-
-                statusText =
-                    "Wrong";
-
-            }
-
-
-            const reviewCard =
-                document.createElement(
-                    "div"
-                );
-
-
-            reviewCard.className =
-                "review-question-card";
-
-
-            reviewCard.innerHTML = `
-
-                <div class="review-question-header">
-
-                    <strong>
-                        Question ${index + 1}
-                    </strong>
-
-                    <span>
-                        ${escapeHtml(
-                            statusText
-                        )}
-                    </span>
-
-                </div>
-
-
-                <h3>
-                    ${escapeHtml(
-                        question.question
-                    )}
-                </h3>
-
-
-                <p>
-                    <strong>
-                        Your Answer:
-                    </strong>
-
-                    ${escapeHtml(
-                        answerText
-                    )}
-                </p>
-
-
-                <p>
-                    <strong>
-                        Correct Answer:
-                    </strong>
-
-                    ${escapeHtml(
-                        correctText
-                    )}
-                </p>
-
-            `;
-
-
-            reviewContainer.appendChild(
-                reviewCard
-            );
-
-        }
-    );
-
-}
-
-
-/* ========================================
-   HTML SAFETY
-======================================== */
-
-function escapeHtml(value) {
-
-    if (
-        value === null ||
-        value === undefined
-    ) {
-
-        return "";
-
-    }
-
-
-    return String(value)
-
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
-}
-
-
-/* ========================================
-   REVIEW BUTTON
-======================================== */
-
-if (reviewBtn) {
-
-    reviewBtn.addEventListener(
-        "click",
-        function () {
-
-            if (
-                answerReview &&
-                answerReview.style.display ===
-                "none"
-            ) {
-
-                answerReview.style.display =
-                    "block";
-
-
-                reviewBtn.textContent =
-                    "Hide Answers";
-
-
-                answerReview.scrollIntoView({
-                    behavior: "smooth"
-                });
-
-            } else if (answerReview) {
-
-                answerReview.style.display =
-                    "none";
-
-
-                reviewBtn.textContent =
-                    "Review Answers";
-
-            }
-
-        }
-    );
-
-}
-
-
-/* ========================================
-   INITIALIZE
-======================================== */
-
-loadResult();
